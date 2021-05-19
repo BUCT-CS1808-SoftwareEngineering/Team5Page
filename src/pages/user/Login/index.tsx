@@ -1,18 +1,13 @@
 import {
-    AlipayCircleOutlined,
     LockOutlined,
-    MobileOutlined,
-    TaobaoCircleOutlined,
     UserOutlined,
-    WeiboCircleOutlined,
 } from '@ant-design/icons';
-import { Alert, Space, message, Tabs } from 'antd';
+import { Alert, Space, message } from 'antd';
 import React, { useState } from 'react';
-import ProForm, { ProFormCaptcha, ProFormCheckbox, ProFormText } from '@ant-design/pro-form';
-import { useIntl, Link, history, FormattedMessage, SelectLang, useModel } from 'umi';
+import ProForm, { ProFormText } from '@ant-design/pro-form';
+import { useIntl, Link, history, useModel } from 'umi';
 import Footer from '@/components/Footer';
 import { login } from '@/services/ant-design-pro/api';
-import { getFakeCaptcha } from '@/services/ant-design-pro/login';
 import styles from './index.less';
 
 const LoginMessage: React.FC<{
@@ -43,7 +38,6 @@ const goto = () => {
 const Login: React.FC = () => {
     const [submitting, setSubmitting] = useState(false);
     const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});
-    const [type, setType] = useState<string>('account');
     const { initialState, setInitialState } = useModel('@@initialState');
     const intl = useIntl();
 
@@ -60,13 +54,13 @@ const Login: React.FC = () => {
 
         try {
             // 登录
-            const msg = await login({ ...values, type });
-
-            if (msg.status === 'ok') {
+            const msg = await login({ ...values });
+            if (msg.code === 1) {
                 const defaultloginSuccessMessage = intl.formatMessage({
                     id: 'pages.login.success',
                     defaultMessage: '登录成功！',
                 });
+                sessionStorage.setItem("currentToken",msg.token);
                 message.success(defaultloginSuccessMessage);
                 await fetchUserInfo();
                 goto();
@@ -85,21 +79,20 @@ const Login: React.FC = () => {
         setSubmitting(false);
     };
 
-    const { status, type: loginType } = userLoginState;
+    const { code } = userLoginState;
     return (
         <div className={styles.container}>
-            <div className={styles.lang}>{SelectLang && <SelectLang />}</div>
             <div className={styles.content}>
                 <div className={styles.top}>
                     <div className={styles.header}>
                         <Link to="/">
                             <img alt="logo" className={styles.logo} src="/logo.svg" />
-                            <span className={styles.title}>Ant Design</span>
+                            <span className={styles.title}>博物馆</span>
                         </Link>
                     </div>
                     <div className={styles.desc}>
                         {intl.formatMessage({
-                            id: 'pages.layouts.userLayout.title',
+                            id: '来自计科1808的课设',
                         })}
                     </div>
                 </div>
@@ -129,24 +122,8 @@ const Login: React.FC = () => {
                             handleSubmit(values as API.LoginParams);
                         }}
                     >
-                        <Tabs activeKey={type} onChange={setType}>
-                            <Tabs.TabPane
-                                key="account"
-                                tab={intl.formatMessage({
-                                    id: 'pages.login.accountLogin.tab',
-                                    defaultMessage: '账户密码登录',
-                                })}
-                            />
-                            <Tabs.TabPane
-                                key="mobile"
-                                tab={intl.formatMessage({
-                                    id: 'pages.login.phoneLogin.tab',
-                                    defaultMessage: '手机号登录',
-                                })}
-                            />
-                        </Tabs>
 
-                        {status === 'error' && loginType === 'account' && (
+                        {code === -1 && (
                             <LoginMessage
                                 content={intl.formatMessage({
                                     id: 'pages.login.accountLogin.errorMessage',
@@ -154,10 +131,8 @@ const Login: React.FC = () => {
                                 })}
                             />
                         )}
-                        {type === 'account' && (
-                            <>
                                 <ProFormText
-                                    name="username"
+                                    name="admin_Name"
                                     fieldProps={{
                                         size: 'large',
                                         prefix: <UserOutlined className={styles.prefixIcon} />,
@@ -174,7 +149,7 @@ const Login: React.FC = () => {
                                     ]}
                                 />
                                 <ProFormText.Password
-                                    name="password"
+                                    name="admin_Passwd"
                                     fieldProps={{
                                         size: 'large',
                                         prefix: <LockOutlined className={styles.prefixIcon} />,
@@ -190,102 +165,14 @@ const Login: React.FC = () => {
                                         },
                                     ]}
                                 />
-                            </>
-                        )}
-
-                        {status === 'error' && loginType === 'mobile' && <LoginMessage content="验证码错误" />}
-                        {type === 'mobile' && (
-                            <>
-                                <ProFormText
-                                    fieldProps={{
-                                        size: 'large',
-                                        prefix: <MobileOutlined className={styles.prefixIcon} />,
-                                    }}
-                                    name="mobile"
-                                    placeholder={intl.formatMessage({
-                                        id: 'pages.login.phoneNumber.placeholder',
-                                        defaultMessage: '手机号',
-                                    })}
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: '手机号是必填项！',
-                                        },
-                                        {
-                                            pattern: /^1\d{10}$/,
-                                            message: '不合法的手机号！',
-                                        },
-                                    ]}
-                                />
-                                <ProFormCaptcha
-                                    fieldProps={{
-                                        size: 'large',
-                                        prefix: <LockOutlined className={styles.prefixIcon} />,
-                                    }}
-                                    captchaProps={{
-                                        size: 'large',
-                                    }}
-                                    placeholder={intl.formatMessage({
-                                        id: 'pages.login.captcha.placeholder',
-                                        defaultMessage: '请输入验证码',
-                                    })}
-                                    captchaTextRender={(timing, count) => {
-                                        if (timing) {
-                                            return `${count} ${intl.formatMessage({
-                                                id: 'pages.getCaptchaSecondText',
-                                                defaultMessage: '获取验证码',
-                                            })}`;
-                                        }
-
-                                        return intl.formatMessage({
-                                            id: 'pages.login.phoneLogin.getVerificationCode',
-                                            defaultMessage: '获取验证码',
-                                        });
-                                    }}
-                                    name="captcha"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: '验证码是必填项！',
-                                        },
-                                    ]}
-                                    onGetCaptcha={async (phone) => {
-                                        const result = await getFakeCaptcha({
-                                            phone,
-                                        });
-
-                                        if (result === false) {
-                                            return;
-                                        }
-
-                                        message.success('获取验证码成功！验证码为：1234');
-                                    }}
-                                />
-                            </>
-                        )}
                         <div
                             style={{
                                 marginBottom: 24,
                             }}
                         >
-                            <ProFormCheckbox noStyle name="autoLogin">
-                                自动登录
-              </ProFormCheckbox>
-                            <a
-                                style={{
-                                    float: 'right',
-                                }}
-                            >
-                                忘记密码 ?
-              </a>
                         </div>
                     </ProForm>
-                    <Space className={styles.other}>
-                        其他登录方式 :
-            <AlipayCircleOutlined className={styles.icon} />
-                        <TaobaoCircleOutlined className={styles.icon} />
-                        <WeiboCircleOutlined className={styles.icon} />
-                    </Space>
+                    
                 </div>
             </div>
             <Footer />

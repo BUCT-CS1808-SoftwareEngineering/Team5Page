@@ -1,5 +1,5 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer } from 'antd';
+import { Button, message, Input, Drawer,Image } from 'antd';
 import React, { useState, useRef } from 'react';
 import { useIntl, FormattedMessage } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
@@ -10,18 +10,20 @@ import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
-import { rule, addRule, updateRule, removeRule } from '@/services/ant-design-pro/api';
+import { updateRule } from '@/services/ant-design-pro/api';
+
+import { getMuseum, addMuseum, deleteMuseum } from '@/services/ant-design-pro/api';
 /**
- * 添加节点
+ * 添加博物馆
  *
  * @param fields
  */
 
-const handleAdd = async (fields: API.RuleListItem) => {
+const handleAdd = async (fields: API.MuseumListItem) => {
     const hide = message.loading('正在添加');
 
     try {
-        await addRule({ ...fields });
+        await addMuseum({ ...fields });
         hide();
         message.success('添加成功');
         return true;
@@ -61,14 +63,14 @@ const handleUpdate = async (fields: FormValueType) => {
  * @param selectedRows
  */
 
-const handleRemove = async (selectedRows: API.RuleListItem[]) => {
+const handleRemove = async (selectedRows: API.MuseumListItem[]) => {
     const hide = message.loading('正在删除');
     if (!selectedRows) return true;
 
     try {
-        await removeRule({
-            key: selectedRows.map((row) => row.key),
-        });
+        selectedRows.forEach(async element => await deleteMuseum({
+            muse_ID: element.muse_ID,
+        }));
         hide();
         message.success('删除成功，即将刷新');
         return true;
@@ -87,94 +89,49 @@ const TableList: React.FC = () => {
     const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
     const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
-    const [currentRow, setCurrentRow] = useState<API.RuleListItem>();
-    const [selectedRowsState, setSelectedRows] = useState<API.RuleListItem[]>([]);
+    const [currentRow, setCurrentRow] = useState<API.MuseumListItem>();
+    const [selectedRowsState, setSelectedRows] = useState<API.MuseumListItem[]>([]);
     /** 国际化配置 */
 
     const intl = useIntl();
-    const columns: ProColumns<API.RuleListItem>[] = [
+    const columns: ProColumns<API.MuseumListItem>[] = [
         {
-            title: '规则名称',
-            dataIndex: 'name',
-            tip: '规则名称是唯一的 key',
-            render: (dom, entity) => {
-                return (
-                    <a
-                        onClick={() => {
-                            setCurrentRow(entity);
-                            setShowDetail(true);
-                        }}
-                    >
-                        {dom}
-                    </a>
-                );
-            },
+            title: '馆名',
+            dataIndex: 'muse_Name',
         },
         {
-            title: '描述',
-            dataIndex: 'desc',
-            valueType: 'textarea',
+            title: '简介',
+            dataIndex: 'muse_Intro',
+            search: false,
         },
         {
-            title: '服务调用次数',
-            dataIndex: 'callNo',
-            sorter: true,
-            hideInForm: true,
-            renderText: (val: string) =>
-                `${val}${intl.formatMessage({
-                    id: 'pages.searchTable.tenThousand',
-                    defaultMessage: ' 万 ',
-                })}`,
+            title: '地址',
+            dataIndex: 'muse_Address',
+            search: false,
         },
         {
-            title: '状态',
-            dataIndex: 'status',
-            hideInForm: true,
-            valueEnum: {
-                0: {
-                    text: '关闭',
-                    status: 'Default',
-                },
-                1: {
-                    text: '运行中',
-                    status: 'Processing',
-                },
-                2: {
-                    text: '已上线',
-                    status: 'Success',
-                },
-                3: {
-                    text: '异常',
-                    status: 'Error',
-                },
-            },
+            title: '开馆时间',
+            dataIndex: 'muse_Opentime',
+            search: false,
         },
         {
-            title: '上次调度时间',
-            sorter: true,
-            dataIndex: 'updatedAt',
-            valueType: 'dateTime',
-            renderFormItem: (item, { defaultRender, ...rest }, form) => {
-                const status = form.getFieldValue('status');
-
-                if (`${status}` === '0') {
-                    return false;
-                }
-
-                if (`${status}` === '3') {
-                    return (
-                        <Input
-                            {...rest}
-                            placeholder={intl.formatMessage({
-                                id: 'pages.searchTable.exception',
-                                defaultMessage: '请输入异常原因！',
-                            })}
-                        />
-                    );
-                }
-
-                return defaultRender(item);
-            },
+            title: '门票价格',
+            dataIndex: 'muse_price',
+            search: false,
+        },
+        {
+            title: '类型',
+            dataIndex: 'muse_class',
+            search: false,
+        },
+        {
+            title: '图片',
+            dataIndex: 'muse_Img',
+            search: false,
+            render: (_,record)=>
+                <Image
+                    src = {record.muse_Img}
+                />
         },
         {
             title: '操作',
@@ -188,23 +145,20 @@ const TableList: React.FC = () => {
                         setCurrentRow(record);
                     }}
                 >
-                    配置
-        </a>,
-                <a key="subscribeAlert" href="https://procomponents.ant.design/">
-                    订阅警报
-        </a>,
+                    更新
+                </a>,
             ],
         },
     ];
     return (
         <PageContainer>
-            <ProTable<API.RuleListItem, API.PageParams>
+            <ProTable<API.MuseumListItem, API.PageParams>
                 headerTitle={intl.formatMessage({
                     id: 'pages.searchTable.title',
                     defaultMessage: '查询表格',
                 })}
                 actionRef={actionRef}
-                rowKey="key"
+                rowKey="muse_ID"
                 search={{
                     labelWidth: 120,
                 }}
@@ -217,9 +171,9 @@ const TableList: React.FC = () => {
                         }}
                     >
                         <PlusOutlined /> 新建
-          </Button>,
+                    </Button>,
                 ]}
-                request={rule}
+                request={getMuseum}
                 columns={columns}
                 rowSelection={{
                     onChange: (_, selectedRows) => {
@@ -239,10 +193,7 @@ const TableList: React.FC = () => {
                             >
                                 {selectedRowsState.length}
                             </a>{' '}
-              项 &nbsp;&nbsp;
-              <span>
-                                服务调用次数总计 {selectedRowsState.reduce((pre, item) => pre + item.callNo!, 0)} 万
-              </span>
+                            项 &nbsp;&nbsp;
                         </div>
                     }
                 >
@@ -254,20 +205,19 @@ const TableList: React.FC = () => {
                         }}
                     >
                         批量删除
-          </Button>
-                    <Button type="primary">批量审批</Button>
+                    </Button>
                 </FooterToolbar>
             )}
             <ModalForm
                 title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.newRule',
-                    defaultMessage: '新建规则',
+                    id: 'pages.searchTable.createForm.新建博物馆',
+                    defaultMessage: '新建博物馆',
                 })}
                 width="400px"
                 visible={createModalVisible}
                 onVisibleChange={handleModalVisible}
                 onFinish={async (value) => {
-                    const success = await handleAdd(value as API.RuleListItem);
+                    const success = await handleAdd(value as API.MuseumListItem);
 
                     if (success) {
                         handleModalVisible(false);
@@ -282,13 +232,80 @@ const TableList: React.FC = () => {
                     rules={[
                         {
                             required: true,
-                            message: '规则名称为必填项',
+                            message: '博物馆名为必填项',
                         },
                     ]}
+                    placeholder='博物馆名'
                     width="md"
-                    name="name"
+                    name="muse_Name"
                 />
-                <ProFormTextArea width="md" name="desc" />
+                <ProFormTextArea width="md" name="muse_Intro" />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '地址为必填项',
+                        },
+                    ]}
+                    placeholder='地址'
+                    width="md"
+                    name="muse_Address"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '门票价格为必填项',
+                        },
+                    ]}
+                    placeholder='门票价格'
+                    width="md"
+                    name="muse_price"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '类型为必填项',
+                        },
+                    ]}
+                    placeholder='类型'
+                    width="md"
+                    name="muse_class"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '坐标为必填项',
+                        },
+                    ]}
+                    placeholder='坐标'
+                    width="md"
+                    name="muse_Location"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '开馆时间为必填项',
+                        },
+                    ]}
+                    placeholder='开馆时间'
+                    width="md"
+                    name="muse_Opentime"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '英文名为必填项',
+                        },
+                    ]}
+                    placeholder='英文名'
+                    width="md"
+                    name="muse_Ename"
+                />
             </ModalForm>
             <UpdateForm
                 onSubmit={async (value) => {

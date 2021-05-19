@@ -1,5 +1,5 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer } from 'antd';
+import { Button, message, Input, Drawer, Image } from 'antd';
 import React, { useState, useRef } from 'react';
 import { useIntl, FormattedMessage } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
@@ -10,18 +10,20 @@ import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
-import { rule, addRule, updateRule, removeRule } from '@/services/ant-design-pro/api';
+import { updateRule } from '@/services/ant-design-pro/api';
+
+import { getComment, addComment, deleteComment, updateComment } from '@/services/ant-design-pro/api';
 /**
- * 添加节点
+ * 添加评论
  *
  * @param fields
  */
 
-const handleAdd = async (fields: API.RuleListItem) => {
+const handleAdd = async (fields: API.CommentItem) => {
     const hide = message.loading('正在添加');
 
     try {
-        await addRule({ ...fields });
+        await addComment({ ...fields });
         hide();
         message.success('添加成功');
         return true;
@@ -32,7 +34,7 @@ const handleAdd = async (fields: API.RuleListItem) => {
     }
 };
 /**
- * 更新节点
+ * 更新评论
  *
  * @param fields
  */
@@ -56,21 +58,21 @@ const handleUpdate = async (fields: FormValueType) => {
     }
 };
 /**
- * 删除节点
+ * 删除评论
  *
  * @param selectedRows
  */
 
-const handleRemove = async (selectedRows: API.RuleListItem[]) => {
+const handleRemove = async (selectedRows: API.CommentItem[]) => {
     const hide = message.loading('正在删除');
     if (!selectedRows) return true;
 
     try {
-        await removeRule({
-            key: selectedRows.map((row) => row.key),
-        });
+        selectedRows.forEach(async element => await deleteComment({
+            com_ID: element.com_ID,
+        }));
         hide();
-        message.success('删除成功，即将刷新');
+        message.success('删除成功');
         return true;
     } catch (error) {
         hide();
@@ -82,99 +84,43 @@ const handleRemove = async (selectedRows: API.RuleListItem[]) => {
 const TableList: React.FC = () => {
     /** 新建窗口的弹窗 */
     const [createModalVisible, handleModalVisible] = useState<boolean>(false);
-    /** 分布更新窗口的弹窗 */
+    /** 更新窗口的弹窗 */
 
     const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
     const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
-    const [currentRow, setCurrentRow] = useState<API.RuleListItem>();
-    const [selectedRowsState, setSelectedRows] = useState<API.RuleListItem[]>([]);
+    const [currentRow, setCurrentRow] = useState<API.CommentItem>();
+    const [selectedRowsState, setSelectedRows] = useState<API.CommentItem[]>([]);
     /** 国际化配置 */
 
     const intl = useIntl();
-    const columns: ProColumns<API.RuleListItem>[] = [
+    const columns: ProColumns<API.CommentItem>[] = [
         {
-            title: '规则名称',
-            dataIndex: 'name',
-            tip: '规则名称是唯一的 key',
-            render: (dom, entity) => {
-                return (
-                    <a
-                        onClick={() => {
-                            setCurrentRow(entity);
-                            setShowDetail(true);
-                        }}
-                    >
-                        {dom}
-                    </a>
-                );
-            },
+            title: '用户ID',
+            dataIndex: 'user_ID',
         },
         {
-            title: '描述',
-            dataIndex: 'desc',
-            valueType: 'textarea',
+            title: '博物馆ID',
+            dataIndex: 'muse_ID',
         },
         {
-            title: '服务调用次数',
-            dataIndex: 'callNo',
-            sorter: true,
-            hideInForm: true,
-            renderText: (val: string) =>
-                `${val}${intl.formatMessage({
-                    id: 'pages.searchTable.tenThousand',
-                    defaultMessage: ' 万 ',
-                })}`,
+            title: '评论内容',
+            dataIndex: 'com_Info',
+            search: false,
         },
         {
-            title: '状态',
-            dataIndex: 'status',
-            hideInForm: true,
-            valueEnum: {
-                0: {
-                    text: '关闭',
-                    status: 'Default',
-                },
-                1: {
-                    text: '运行中',
-                    status: 'Processing',
-                },
-                2: {
-                    text: '已上线',
-                    status: 'Success',
-                },
-                3: {
-                    text: '异常',
-                    status: 'Error',
-                },
-            },
+            title: '评论时间',
+            dataIndex: 'com_Time',
+            search: false,
         },
         {
-            title: '上次调度时间',
-            sorter: true,
-            dataIndex: 'updatedAt',
-            valueType: 'dateTime',
-            renderFormItem: (item, { defaultRender, ...rest }, form) => {
-                const status = form.getFieldValue('status');
-
-                if (`${status}` === '0') {
-                    return false;
-                }
-
-                if (`${status}` === '3') {
-                    return (
-                        <Input
-                            {...rest}
-                            placeholder={intl.formatMessage({
-                                id: 'pages.searchTable.exception',
-                                defaultMessage: '请输入异常原因！',
-                            })}
-                        />
-                    );
-                }
-
-                return defaultRender(item);
-            },
+            title: '是否展示',
+            dataIndex: 'muse_Address',
+            render: (_, fields) =>
+                <>
+                    {fields.com_IfShow ? "是" : "否"}
+                </>,
+            search: false,
         },
         {
             title: '操作',
@@ -188,26 +134,21 @@ const TableList: React.FC = () => {
                         setCurrentRow(record);
                     }}
                 >
-                    配置
-        </a>,
-                <a key="subscribeAlert" href="https://procomponents.ant.design/">
-                    订阅警报
-        </a>,
+                    更新
+                </a>,
             ],
         },
     ];
     return (
         <PageContainer>
-            <ProTable<API.RuleListItem, API.PageParams>
+            <ProTable<API.CommentItem, API.PageParams>
                 headerTitle={intl.formatMessage({
                     id: 'pages.searchTable.title',
                     defaultMessage: '查询表格',
                 })}
                 actionRef={actionRef}
-                rowKey="key"
-                search={{
-                    labelWidth: 120,
-                }}
+                rowKey="com_ID"
+                search={false}
                 toolBarRender={() => [
                     <Button
                         type="primary"
@@ -217,9 +158,9 @@ const TableList: React.FC = () => {
                         }}
                     >
                         <PlusOutlined /> 新建
-          </Button>,
+                    </Button>,
                 ]}
-                request={rule}
+                request={getComment}
                 columns={columns}
                 rowSelection={{
                     onChange: (_, selectedRows) => {
@@ -239,10 +180,7 @@ const TableList: React.FC = () => {
                             >
                                 {selectedRowsState.length}
                             </a>{' '}
-              项 &nbsp;&nbsp;
-              <span>
-                                服务调用次数总计 {selectedRowsState.reduce((pre, item) => pre + item.callNo!, 0)} 万
-              </span>
+                            项 &nbsp;&nbsp;
                         </div>
                     }
                 >
@@ -254,20 +192,19 @@ const TableList: React.FC = () => {
                         }}
                     >
                         批量删除
-          </Button>
-                    <Button type="primary">批量审批</Button>
+                    </Button>
                 </FooterToolbar>
             )}
             <ModalForm
                 title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.newRule',
-                    defaultMessage: '新建规则',
+                    id: 'pages.searchTable.createForm.新增评论',
+                    defaultMessage: '新增评论',
                 })}
                 width="400px"
                 visible={createModalVisible}
                 onVisibleChange={handleModalVisible}
                 onFinish={async (value) => {
-                    const success = await handleAdd(value as API.RuleListItem);
+                    const success = await handleAdd(value as API.CommentItem);
 
                     if (success) {
                         handleModalVisible(false);
@@ -282,13 +219,59 @@ const TableList: React.FC = () => {
                     rules={[
                         {
                             required: true,
-                            message: '规则名称为必填项',
+                            message: '用户ID为必填项',
                         },
                     ]}
+                    placeholder='用户ID'
                     width="md"
-                    name="name"
+                    name="user_ID"
                 />
-                <ProFormTextArea width="md" name="desc" />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '博物馆ID为必填项',
+                        },
+                    ]}
+                    placeholder='博物馆ID'
+                    width="md"
+                    name="muse_ID"
+                />
+                <ProFormTextArea
+                    rules={[
+                        {
+                            required: true,
+                            message: '评论内容为必填项',
+                        },
+                    ]}
+                    placeholder='评论内容'
+                    width="md"
+                    name="com_Info"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '时间为必填项',
+                        },
+                    ]}
+                    initialValue={new Date().toLocaleDateString()}
+                    placeholder="时间"
+                    width="md"
+                    name="com_Time"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '是否显示为必填项',
+                        },
+                    ]}
+                    initialValue={false}
+                    placeholder="是否显示"
+                    width="md"
+                    name="com_IfShow"
+                />
             </ModalForm>
             <UpdateForm
                 onSubmit={async (value) => {

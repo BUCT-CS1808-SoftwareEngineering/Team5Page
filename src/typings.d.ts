@@ -19,21 +19,21 @@ declare module 'bizcharts-plugin-slider';
 
 // google analytics interface
 type GAFieldsObject = {
-  eventCategory: string;
-  eventAction: string;
-  eventLabel?: string;
-  eventValue?: number;
-  nonInteraction?: boolean;
+    eventCategory: string;
+    eventAction: string;
+    eventLabel?: string;
+    eventValue?: number;
+    nonInteraction?: boolean;
 };
 
 type Window = {
-  ga: (
-    command: 'send',
-    hitType: 'event' | 'pageview',
-    fieldsObject: GAFieldsObject | string,
-  ) => void;
-  reloadAuthorized: () => void;
-  routerBase: string;
+    ga: (
+        command: 'send',
+        hitType: 'event' | 'pageview',
+        fieldsObject: GAFieldsObject | string,
+    ) => void;
+    reloadAuthorized: () => void;
+    routerBase: string;
 };
 
 declare let ga: () => void;

@@ -1,5 +1,5 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer } from 'antd';
+import { Button, message, Input, Drawer,Image } from 'antd';
 import React, { useState, useRef } from 'react';
 import { useIntl, FormattedMessage } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
@@ -10,18 +10,20 @@ import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
-import { rule, addRule, updateRule, removeRule } from '@/services/ant-design-pro/api';
+import { updateRule } from '@/services/ant-design-pro/api';
+
+import { getExhibition, addExhibition, deleteExhibition } from '@/services/ant-design-pro/api';
 /**
- * 添加节点
+ * 添加博物馆
  *
  * @param fields
  */
 
-const handleAdd = async (fields: API.RuleListItem) => {
+const handleAdd = async (fields: API.ExhibitionItem) => {
     const hide = message.loading('正在添加');
 
     try {
-        await addRule({ ...fields });
+        await addExhibition({ ...fields });
         hide();
         message.success('添加成功');
         return true;
@@ -61,14 +63,14 @@ const handleUpdate = async (fields: FormValueType) => {
  * @param selectedRows
  */
 
-const handleRemove = async (selectedRows: API.RuleListItem[]) => {
+const handleRemove = async (selectedRows: API.ExhibitionItem[]) => {
     const hide = message.loading('正在删除');
     if (!selectedRows) return true;
 
     try {
-        await removeRule({
-            key: selectedRows.map((row) => row.key),
-        });
+        selectedRows.forEach(async element => await deleteExhibition({
+            exhib_ID: element.exhib_ID,
+        }));
         hide();
         message.success('删除成功，即将刷新');
         return true;
@@ -87,124 +89,50 @@ const TableList: React.FC = () => {
     const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
     const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
-    const [currentRow, setCurrentRow] = useState<API.RuleListItem>();
-    const [selectedRowsState, setSelectedRows] = useState<API.RuleListItem[]>([]);
+    const [currentRow, setCurrentRow] = useState<API.ExhibitionItem>();
+    const [selectedRowsState, setSelectedRows] = useState<API.ExhibitionItem[]>([]);
     /** 国际化配置 */
 
     const intl = useIntl();
-    const columns: ProColumns<API.RuleListItem>[] = [
+    const columns: ProColumns<API.ExhibitionItem>[] = [
         {
-            title: '规则名称',
-            dataIndex: 'name',
-            tip: '规则名称是唯一的 key',
-            render: (dom, entity) => {
-                return (
-                    <a
-                        onClick={() => {
-                            setCurrentRow(entity);
-                            setShowDetail(true);
-                        }}
-                    >
-                        {dom}
-                    </a>
-                );
-            },
+            title: '展览ID',
+            dataIndex: 'exhib_ID',
+            search:false,
         },
         {
-            title: '描述',
-            dataIndex: 'desc',
-            valueType: 'textarea',
+            title: '博物馆ID',
+            dataIndex: 'muse_ID',
         },
         {
-            title: '服务调用次数',
-            dataIndex: 'callNo',
-            sorter: true,
-            hideInForm: true,
-            renderText: (val: string) =>
-                `${val}${intl.formatMessage({
-                    id: 'pages.searchTable.tenThousand',
-                    defaultMessage: ' 万 ',
-                })}`,
+            title: '展览名称',
+            dataIndex: 'exhib_Name',
+            search: false,
         },
         {
-            title: '状态',
-            dataIndex: 'status',
-            hideInForm: true,
-            valueEnum: {
-                0: {
-                    text: '关闭',
-                    status: 'Default',
-                },
-                1: {
-                    text: '运行中',
-                    status: 'Processing',
-                },
-                2: {
-                    text: '已上线',
-                    status: 'Success',
-                },
-                3: {
-                    text: '异常',
-                    status: 'Error',
-                },
-            },
+            title: '展览内容',
+            dataIndex: 'exhib_Content',
+            search: false,
         },
         {
-            title: '上次调度时间',
-            sorter: true,
-            dataIndex: 'updatedAt',
-            valueType: 'dateTime',
-            renderFormItem: (item, { defaultRender, ...rest }, form) => {
-                const status = form.getFieldValue('status');
-
-                if (`${status}` === '0') {
-                    return false;
-                }
-
-                if (`${status}` === '3') {
-                    return (
-                        <Input
-                            {...rest}
-                            placeholder={intl.formatMessage({
-                                id: 'pages.searchTable.exception',
-                                defaultMessage: '请输入异常原因！',
-                            })}
-                        />
-                    );
-                }
-
-                return defaultRender(item);
-            },
-        },
-        {
-            title: '操作',
-            dataIndex: 'option',
-            valueType: 'option',
-            render: (_, record) => [
-                <a
-                    key="config"
-                    onClick={() => {
-                        handleUpdateModalVisible(true);
-                        setCurrentRow(record);
-                    }}
-                >
-                    配置
-        </a>,
-                <a key="subscribeAlert" href="https://procomponents.ant.design/">
-                    订阅警报
-        </a>,
-            ],
-        },
+            title: '图片',
+            dataIndex: 'exhib_Pic',
+            search: false,
+            render: (_,record)=>
+                <Image
+                    src = {record.exhib_Pic}
+                />
+        }
     ];
     return (
         <PageContainer>
-            <ProTable<API.RuleListItem, API.PageParams>
+            <ProTable<API.ExhibitionItem, API.PageParams>
                 headerTitle={intl.formatMessage({
                     id: 'pages.searchTable.title',
                     defaultMessage: '查询表格',
                 })}
                 actionRef={actionRef}
-                rowKey="key"
+                rowKey="exhib_ID"
                 search={{
                     labelWidth: 120,
                 }}
@@ -217,9 +145,9 @@ const TableList: React.FC = () => {
                         }}
                     >
                         <PlusOutlined /> 新建
-          </Button>,
+                    </Button>,
                 ]}
-                request={rule}
+                request={getExhibition}
                 columns={columns}
                 rowSelection={{
                     onChange: (_, selectedRows) => {
@@ -239,10 +167,7 @@ const TableList: React.FC = () => {
                             >
                                 {selectedRowsState.length}
                             </a>{' '}
-              项 &nbsp;&nbsp;
-              <span>
-                                服务调用次数总计 {selectedRowsState.reduce((pre, item) => pre + item.callNo!, 0)} 万
-              </span>
+                            项 &nbsp;&nbsp;
                         </div>
                     }
                 >
@@ -254,20 +179,19 @@ const TableList: React.FC = () => {
                         }}
                     >
                         批量删除
-          </Button>
-                    <Button type="primary">批量审批</Button>
+                    </Button>
                 </FooterToolbar>
             )}
             <ModalForm
                 title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.newRule',
-                    defaultMessage: '新建规则',
+                    id: 'pages.searchTable.createForm.新建展览信息',
+                    defaultMessage: '新建展览信息',
                 })}
                 width="400px"
                 visible={createModalVisible}
                 onVisibleChange={handleModalVisible}
                 onFinish={async (value) => {
-                    const success = await handleAdd(value as API.RuleListItem);
+                    const success = await handleAdd(value as API.ExhibitionItem);
 
                     if (success) {
                         handleModalVisible(false);
@@ -282,13 +206,46 @@ const TableList: React.FC = () => {
                     rules={[
                         {
                             required: true,
-                            message: '规则名称为必填项',
+                            message: '博物馆名为必填项',
                         },
                     ]}
+                    placeholder='博物馆名'
                     width="md"
-                    name="name"
+                    name="muse_Name"
                 />
-                <ProFormTextArea width="md" name="desc" />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '展览名为必填项',
+                        },
+                    ]}
+                    placeholder='展览名'
+                    width="md"
+                    name="exhib_Name"
+                />
+                <ProFormTextArea
+                    rules={[
+                        {
+                            required: true,
+                            message: '展览内容为必填项',
+                        },
+                    ]}
+                    placeholder='展览内容'
+                    width="md"
+                    name="exhib_Content"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '图片为必填项',
+                        },
+                    ]}
+                    placeholder='展览图片'
+                    width="md"
+                    name="exhib_Pic"
+                />
             </ModalForm>
             <UpdateForm
                 onSubmit={async (value) => {

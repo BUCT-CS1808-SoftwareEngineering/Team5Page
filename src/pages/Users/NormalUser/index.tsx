@@ -1,5 +1,5 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer } from 'antd';
+import { Button, message, Input, Drawer,Image } from 'antd';
 import React, { useState, useRef } from 'react';
 import { useIntl, FormattedMessage } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
@@ -10,18 +10,20 @@ import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
-import { rule, addRule, updateRule, removeRule } from '@/services/ant-design-pro/api';
+import { updateRule } from '@/services/ant-design-pro/api';
+
+import { getNormalUser, addNormalUser, deleteNormalUser,updateNormalUser } from '@/services/ant-design-pro/api';
 /**
- * 添加节点
+ * 添加博物馆
  *
  * @param fields
  */
 
-const handleAdd = async (fields: API.RuleListItem) => {
+const handleAdd = async (fields: API.NormalUserItem) => {
     const hide = message.loading('正在添加');
 
     try {
-        await addRule({ ...fields });
+        await addNormalUser({ ...fields });
         hide();
         message.success('添加成功');
         return true;
@@ -61,16 +63,16 @@ const handleUpdate = async (fields: FormValueType) => {
  * @param selectedRows
  */
 
-const handleRemove = async (selectedRows: API.RuleListItem[]) => {
+const handleRemove = async (selectedRows: API.NormalUserItem[]) => {
     const hide = message.loading('正在删除');
     if (!selectedRows) return true;
 
     try {
-        await removeRule({
-            key: selectedRows.map((row) => row.key),
-        });
+        selectedRows.forEach(async element => await deleteNormalUser({
+            user_ID: element.user_ID,
+        }));
         hide();
-        message.success('删除成功，即将刷新');
+        message.success('删除成功');
         return true;
     } catch (error) {
         hide();
@@ -87,94 +89,49 @@ const TableList: React.FC = () => {
     const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
     const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
-    const [currentRow, setCurrentRow] = useState<API.RuleListItem>();
-    const [selectedRowsState, setSelectedRows] = useState<API.RuleListItem[]>([]);
+    const [currentRow, setCurrentRow] = useState<API.NormalUserItem>();
+    const [selectedRowsState, setSelectedRows] = useState<API.NormalUserItem[]>([]);
     /** 国际化配置 */
 
     const intl = useIntl();
-    const columns: ProColumns<API.RuleListItem>[] = [
+    const columns: ProColumns<API.NormalUserItem>[] = [
         {
-            title: '规则名称',
-            dataIndex: 'name',
-            tip: '规则名称是唯一的 key',
-            render: (dom, entity) => {
-                return (
-                    <a
-                        onClick={() => {
-                            setCurrentRow(entity);
-                            setShowDetail(true);
-                        }}
-                    >
-                        {dom}
-                    </a>
-                );
-            },
+            title: '用户ID',
+            dataIndex: 'user_ID',
         },
         {
-            title: '描述',
-            dataIndex: 'desc',
-            valueType: 'textarea',
+            title: '用户名',
+            dataIndex: 'user_Name',
+            search: false,
         },
         {
-            title: '服务调用次数',
-            dataIndex: 'callNo',
-            sorter: true,
-            hideInForm: true,
-            renderText: (val: string) =>
-                `${val}${intl.formatMessage({
-                    id: 'pages.searchTable.tenThousand',
-                    defaultMessage: ' 万 ',
-                })}`,
+            title: '密码',
+            dataIndex: 'user_Passwd',
+            search: false,
         },
         {
-            title: '状态',
-            dataIndex: 'status',
-            hideInForm: true,
-            valueEnum: {
-                0: {
-                    text: '关闭',
-                    status: 'Default',
-                },
-                1: {
-                    text: '运行中',
-                    status: 'Processing',
-                },
-                2: {
-                    text: '已上线',
-                    status: 'Success',
-                },
-                3: {
-                    text: '异常',
-                    status: 'Error',
-                },
-            },
+            title: '电话',
+            dataIndex: 'user_Phone',
+            search: false,
         },
         {
-            title: '上次调度时间',
-            sorter: true,
-            dataIndex: 'updatedAt',
-            valueType: 'dateTime',
-            renderFormItem: (item, { defaultRender, ...rest }, form) => {
-                const status = form.getFieldValue('status');
-
-                if (`${status}` === '0') {
-                    return false;
-                }
-
-                if (`${status}` === '3') {
-                    return (
-                        <Input
-                            {...rest}
-                            placeholder={intl.formatMessage({
-                                id: 'pages.searchTable.exception',
-                                defaultMessage: '请输入异常原因！',
-                            })}
-                        />
-                    );
-                }
-
-                return defaultRender(item);
-            },
+            title: '邮箱',
+            dataIndex: 'user_Email',
+            search: false,
+        },
+        {
+            title: '评论权限',
+            dataIndex: 'if_com',
+            search: false,
+        },
+        {
+            title: '头像',
+            dataIndex: 'user_Avatar',
+            search: false,
+            render: (_,record)=>
+                <Image
+                    src = {record.user_Avatar}
+                />
         },
         {
             title: '操作',
@@ -188,26 +145,21 @@ const TableList: React.FC = () => {
                         setCurrentRow(record);
                     }}
                 >
-                    配置
-        </a>,
-                <a key="subscribeAlert" href="https://procomponents.ant.design/">
-                    订阅警报
-        </a>,
+                    更新
+                </a>,
             ],
         },
     ];
     return (
         <PageContainer>
-            <ProTable<API.RuleListItem, API.PageParams>
+            <ProTable<API.NormalUserItem, API.PageParams>
                 headerTitle={intl.formatMessage({
                     id: 'pages.searchTable.title',
                     defaultMessage: '查询表格',
                 })}
                 actionRef={actionRef}
-                rowKey="key"
-                search={{
-                    labelWidth: 120,
-                }}
+                rowKey="user_ID"
+                search={false}
                 toolBarRender={() => [
                     <Button
                         type="primary"
@@ -217,9 +169,9 @@ const TableList: React.FC = () => {
                         }}
                     >
                         <PlusOutlined /> 新建
-          </Button>,
+                    </Button>,
                 ]}
-                request={rule}
+                request={getNormalUser}
                 columns={columns}
                 rowSelection={{
                     onChange: (_, selectedRows) => {
@@ -239,10 +191,7 @@ const TableList: React.FC = () => {
                             >
                                 {selectedRowsState.length}
                             </a>{' '}
-              项 &nbsp;&nbsp;
-              <span>
-                                服务调用次数总计 {selectedRowsState.reduce((pre, item) => pre + item.callNo!, 0)} 万
-              </span>
+                            项 &nbsp;&nbsp;
                         </div>
                     }
                 >
@@ -254,20 +203,19 @@ const TableList: React.FC = () => {
                         }}
                     >
                         批量删除
-          </Button>
-                    <Button type="primary">批量审批</Button>
+                    </Button>
                 </FooterToolbar>
             )}
             <ModalForm
                 title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.newRule',
-                    defaultMessage: '新建规则',
+                    id: 'pages.searchTable.createForm.新建用户',
+                    defaultMessage: '新建用户',
                 })}
                 width="400px"
                 visible={createModalVisible}
                 onVisibleChange={handleModalVisible}
                 onFinish={async (value) => {
-                    const success = await handleAdd(value as API.RuleListItem);
+                    const success = await handleAdd(value as API.NormalUserItem);
 
                     if (success) {
                         handleModalVisible(false);
@@ -282,13 +230,68 @@ const TableList: React.FC = () => {
                     rules={[
                         {
                             required: true,
-                            message: '规则名称为必填项',
+                            message: '博物馆名为必填项',
                         },
                     ]}
+                    placeholder='博物馆名'
                     width="md"
-                    name="name"
+                    name="muse_Name"
                 />
-                <ProFormTextArea width="md" name="desc" />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '用户名为必填项',
+                        },
+                    ]}
+                    placeholder='用户名'
+                    width="md"
+                    name="user_Name"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '密码为必填项',
+                        },
+                    ]}
+                    placeholder='密码'
+                    width="md"
+                    name="user_Passwd"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '手机号为必填项',
+                        },
+                    ]}
+                    placeholder='手机号'
+                    width="md"
+                    name="user_Phone"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '电子邮件为必填项',
+                        },
+                    ]}
+                    placeholder='电子邮件'
+                    width="md"
+                    name="user_Email"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '评论权限为必填项',
+                        },
+                    ]}
+                    placeholder='评论权限'
+                    width="md"
+                    name="if_com"
+                />
             </ModalForm>
             <UpdateForm
                 onSubmit={async (value) => {
