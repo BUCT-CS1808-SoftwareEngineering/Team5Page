@@ -1,20 +1,17 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer,Image } from 'antd';
+import { Button, message, Drawer } from 'antd';
 import React, { useState, useRef } from 'react';
-import { useIntl, FormattedMessage } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
 import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
 import ProDescriptions from '@ant-design/pro-descriptions';
-import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
-import { updateRule } from '@/services/ant-design-pro/api';
 
 import { getNormalUser, addNormalUser, deleteNormalUser,updateNormalUser } from '@/services/ant-design-pro/api';
+import Avatar from 'antd/lib/avatar/avatar';
 /**
- * 添加博物馆
+ * 添加用户
  *
  * @param fields
  */
@@ -39,15 +36,11 @@ const handleAdd = async (fields: API.NormalUserItem) => {
  * @param fields
  */
 
-const handleUpdate = async (fields: FormValueType) => {
+const handleUpdate = async (fields: API.NormalUserItem) => {
     const hide = message.loading('正在配置');
 
     try {
-        await updateRule({
-            name: fields.name,
-            desc: fields.desc,
-            key: fields.key,
-        });
+        await updateNormalUser(fields);
         hide();
         message.success('配置成功');
         return true;
@@ -82,22 +75,24 @@ const handleRemove = async (selectedRows: API.NormalUserItem[]) => {
 };
 
 const TableList: React.FC = () => {
-    /** 新建窗口的弹窗 */
     const [createModalVisible, handleModalVisible] = useState<boolean>(false);
-    /** 分布更新窗口的弹窗 */
-
     const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
     const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
     const [currentRow, setCurrentRow] = useState<API.NormalUserItem>();
     const [selectedRowsState, setSelectedRows] = useState<API.NormalUserItem[]>([]);
-    /** 国际化配置 */
 
-    const intl = useIntl();
     const columns: ProColumns<API.NormalUserItem>[] = [
         {
             title: '用户ID',
             dataIndex: 'user_ID',
+            render: (_,record)=>
+            <>
+                <Avatar
+                    src = {`http://192.144.230.213:8081${record.user_Avatar}`}
+                />
+                {record.user_Name}
+            </>
         },
         {
             title: '用户名',
@@ -125,15 +120,6 @@ const TableList: React.FC = () => {
             search: false,
         },
         {
-            title: '头像',
-            dataIndex: 'user_Avatar',
-            search: false,
-            render: (_,record)=>
-                <Image
-                    src = {record.user_Avatar}
-                />
-        },
-        {
             title: '操作',
             dataIndex: 'option',
             valueType: 'option',
@@ -153,10 +139,7 @@ const TableList: React.FC = () => {
     return (
         <PageContainer>
             <ProTable<API.NormalUserItem, API.PageParams>
-                headerTitle={intl.formatMessage({
-                    id: 'pages.searchTable.title',
-                    defaultMessage: '查询表格',
-                })}
+                headerTitle="查询表格"
                 actionRef={actionRef}
                 rowKey="user_ID"
                 search={false}
@@ -206,114 +189,26 @@ const TableList: React.FC = () => {
                     </Button>
                 </FooterToolbar>
             )}
-            <ModalForm
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.新建用户',
-                    defaultMessage: '新建用户',
-                })}
-                width="400px"
-                visible={createModalVisible}
-                onVisibleChange={handleModalVisible}
-                onFinish={async (value) => {
-                    const success = await handleAdd(value as API.NormalUserItem);
-
-                    if (success) {
-                        handleModalVisible(false);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-            >
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '博物馆名为必填项',
-                        },
-                    ]}
-                    placeholder='博物馆名'
-                    width="md"
-                    name="muse_Name"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '用户名为必填项',
-                        },
-                    ]}
-                    placeholder='用户名'
-                    width="md"
-                    name="user_Name"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '密码为必填项',
-                        },
-                    ]}
-                    placeholder='密码'
-                    width="md"
-                    name="user_Passwd"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '手机号为必填项',
-                        },
-                    ]}
-                    placeholder='手机号'
-                    width="md"
-                    name="user_Phone"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '电子邮件为必填项',
-                        },
-                    ]}
-                    placeholder='电子邮件'
-                    width="md"
-                    name="user_Email"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '评论权限为必填项',
-                        },
-                    ]}
-                    placeholder='评论权限'
-                    width="md"
-                    name="if_com"
-                />
-            </ModalForm>
-            <UpdateForm
-                onSubmit={async (value) => {
-                    const success = await handleUpdate(value);
-
-                    if (success) {
-                        handleUpdateModalVisible(false);
-                        setCurrentRow(undefined);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-                onCancel={() => {
-                    handleUpdateModalVisible(false);
-                    setCurrentRow(undefined);
-                }}
-                updateModalVisible={updateModalVisible}
-                values={currentRow || {}}
+            <UpdateForm 
+                title={"新建用户"}
+                updateModalVisible={createModalVisible}
+                currentRow={currentRow}
+                setCurrentRow={setCurrentRow}
+                handleUpdateModalVisible={handleModalVisible}
+                handleSubmit={handleAdd}
+                proTableRef={actionRef}
+                type={"add"}
             />
-
+            <UpdateForm 
+                title={"修改用户"}
+                updateModalVisible={updateModalVisible}
+                currentRow={currentRow}
+                setCurrentRow={setCurrentRow}
+                handleUpdateModalVisible={handleUpdateModalVisible}
+                handleSubmit={handleUpdate}
+                proTableRef={actionRef}
+                type={"update"}
+            />
             <Drawer
                 width={600}
                 visible={showDetail}
@@ -323,17 +218,17 @@ const TableList: React.FC = () => {
                 }}
                 closable={false}
             >
-                {currentRow?.name && (
+                {currentRow?.user_Name && (
                     <ProDescriptions<API.RuleListItem>
                         column={2}
-                        title={currentRow?.name}
+                        title={currentRow?.user_Name}
                         request={async () => ({
                             data: currentRow || {},
                         })}
                         params={{
-                            id: currentRow?.name,
+                            id: currentRow?.user_Name,
                         }}
-                        columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}
+                        columns={columns as ProDescriptionsItemProps<API.NormalUserItem>[]}
                     />
                 )}
             </Drawer>

@@ -1,29 +1,23 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer,Image } from 'antd';
+import { Button, message } from 'antd';
 import React, { useState, useRef } from 'react';
-import { useIntl, FormattedMessage } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
-import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
-import ProDescriptions from '@ant-design/pro-descriptions';
-import type { FormValueType } from './components/UpdateForm';
-import UpdateForm from './components/UpdateForm';
-import { updateRule } from '@/services/ant-design-pro/api';
+import UpdateForm from './components/UpdateForm'
+import { getVideos,addVideo,deleteVideo,updateVideo } from '@/services/ant-design-pro/api';
 
-import { getMuseum, addMuseum, deleteMuseum } from '@/services/ant-design-pro/api';
 /**
- * 添加博物馆
+ * 添加视频
  *
  * @param fields
  */
 
-const handleAdd = async (fields: API.MuseumListItem) => {
+const handleAdd = async (fields: API.VideoItem) => {
     const hide = message.loading('正在添加');
 
     try {
-        await addMuseum({ ...fields });
+        await addVideo({ ...fields });
         hide();
         message.success('添加成功');
         return true;
@@ -34,20 +28,15 @@ const handleAdd = async (fields: API.MuseumListItem) => {
     }
 };
 /**
- * 更新节点
+ * 审核视频
  *
  * @param fields
  */
 
-const handleUpdate = async (fields: FormValueType) => {
+const handleUpdate = async (fields: {video_ID: number; video_IfShow: boolean}) => {
     const hide = message.loading('正在配置');
-
     try {
-        await updateRule({
-            name: fields.name,
-            desc: fields.desc,
-            key: fields.key,
-        });
+        await updateVideo(fields);
         hide();
         message.success('配置成功');
         return true;
@@ -58,21 +47,21 @@ const handleUpdate = async (fields: FormValueType) => {
     }
 };
 /**
- * 删除节点
+ * 删除视频
  *
  * @param selectedRows
  */
 
-const handleRemove = async (selectedRows: API.MuseumListItem[]) => {
+const handleRemove = async (selectedRows: API.VideoItem[]) => {
     const hide = message.loading('正在删除');
     if (!selectedRows) return true;
 
     try {
-        selectedRows.forEach(async element => await deleteMuseum({
-            muse_ID: element.muse_ID,
+        selectedRows.forEach(async element => await deleteVideo({
+            video_ID: element.video_ID,
         }));
         hide();
-        message.success('删除成功，即将刷新');
+        message.success('删除成功');
         return true;
     } catch (error) {
         hide();
@@ -82,56 +71,50 @@ const handleRemove = async (selectedRows: API.MuseumListItem[]) => {
 };
 
 const TableList: React.FC = () => {
-    /** 新建窗口的弹窗 */
     const [createModalVisible, handleModalVisible] = useState<boolean>(false);
-    /** 分布更新窗口的弹窗 */
-
-    const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
-    const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
-    const [currentRow, setCurrentRow] = useState<API.MuseumListItem>();
-    const [selectedRowsState, setSelectedRows] = useState<API.MuseumListItem[]>([]);
-    /** 国际化配置 */
+    const [currentRow, setCurrentRow] = useState<API.VideoItem>({});
+    const [selectedRowsState, setSelectedRows] = useState<API.VideoItem[]>([]);
 
-    const intl = useIntl();
-    const columns: ProColumns<API.MuseumListItem>[] = [
+    const columns: ProColumns<API.VideoItem>[] = [
         {
-            title: '馆名',
-            dataIndex: 'muse_Name',
+            title: '博物馆ID',
+            dataIndex: 'muse_ID',
+        },
+        {
+            title: '用户ID',
+            dataIndex: 'user_ID',
+        },
+        {
+            title: '视频名',
+            search:false,
+            dataIndex: 'video_Name',
+        },
+        {
+            title: '时长',
+            search:false,
+            dataIndex: 'video_Time',
         },
         {
             title: '简介',
-            dataIndex: 'muse_Intro',
-            search: false,
+            search:false,
+            dataIndex: 'video_Description',
         },
         {
-            title: '地址',
-            dataIndex: 'muse_Address',
-            search: false,
+            title: '是否通过',
+            search:false,
+            dataIndex: 'video_IfShow',
         },
         {
-            title: '开馆时间',
-            dataIndex: 'muse_Opentime',
-            search: false,
-        },
-        {
-            title: '门票价格',
-            dataIndex: 'muse_price',
-            search: false,
-        },
-        {
-            title: '类型',
-            dataIndex: 'muse_class',
-            search: false,
-        },
-        {
-            title: '图片',
-            dataIndex: 'muse_Img',
-            search: false,
-            render: (_,record)=>
-                <Image
-                    src = {record.muse_Img}
-                />
+            title: '视频',
+            search:false,
+            dataIndex: 'video_Url',
+            render:(_,record)=>
+                <>
+                    <a href={`http://192.144.230.213:8081${record.video_Url}`}> 
+                        链接
+                    </a>
+                </>
         },
         {
             title: '操作',
@@ -141,8 +124,10 @@ const TableList: React.FC = () => {
                 <a
                     key="config"
                     onClick={() => {
-                        handleUpdateModalVisible(true);
-                        setCurrentRow(record);
+                        handleUpdate({
+                            video_ID: record.video_ID,
+                            video_IfShow: !record.video_IfShow,
+                        });
                     }}
                 >
                     更新
@@ -152,16 +137,10 @@ const TableList: React.FC = () => {
     ];
     return (
         <PageContainer>
-            <ProTable<API.MuseumListItem, API.PageParams>
-                headerTitle={intl.formatMessage({
-                    id: 'pages.searchTable.title',
-                    defaultMessage: '查询表格',
-                })}
+            <ProTable<API.VideoItem, API.PageParams>
+                headerTitle="查询表格"
                 actionRef={actionRef}
-                rowKey="muse_ID"
-                search={{
-                    labelWidth: 120,
-                }}
+                rowKey="video_ID"
                 toolBarRender={() => [
                     <Button
                         type="primary"
@@ -173,7 +152,7 @@ const TableList: React.FC = () => {
                         <PlusOutlined /> 新建
                     </Button>,
                 ]}
-                request={getMuseum}
+                request={getVideos}
                 columns={columns}
                 rowSelection={{
                     onChange: (_, selectedRows) => {
@@ -208,149 +187,16 @@ const TableList: React.FC = () => {
                     </Button>
                 </FooterToolbar>
             )}
-            <ModalForm
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.新建博物馆',
-                    defaultMessage: '新建博物馆',
-                })}
-                width="400px"
-                visible={createModalVisible}
-                onVisibleChange={handleModalVisible}
-                onFinish={async (value) => {
-                    const success = await handleAdd(value as API.MuseumListItem);
-
-                    if (success) {
-                        handleModalVisible(false);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-            >
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '博物馆名为必填项',
-                        },
-                    ]}
-                    placeholder='博物馆名'
-                    width="md"
-                    name="muse_Name"
-                />
-                <ProFormTextArea width="md" name="muse_Intro" />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '地址为必填项',
-                        },
-                    ]}
-                    placeholder='地址'
-                    width="md"
-                    name="muse_Address"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '门票价格为必填项',
-                        },
-                    ]}
-                    placeholder='门票价格'
-                    width="md"
-                    name="muse_price"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '类型为必填项',
-                        },
-                    ]}
-                    placeholder='类型'
-                    width="md"
-                    name="muse_class"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '坐标为必填项',
-                        },
-                    ]}
-                    placeholder='坐标'
-                    width="md"
-                    name="muse_Location"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '开馆时间为必填项',
-                        },
-                    ]}
-                    placeholder='开馆时间'
-                    width="md"
-                    name="muse_Opentime"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '英文名为必填项',
-                        },
-                    ]}
-                    placeholder='英文名'
-                    width="md"
-                    name="muse_Ename"
-                />
-            </ModalForm>
-            <UpdateForm
-                onSubmit={async (value) => {
-                    const success = await handleUpdate(value);
-
-                    if (success) {
-                        handleUpdateModalVisible(false);
-                        setCurrentRow(undefined);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-                onCancel={() => {
-                    handleUpdateModalVisible(false);
-                    setCurrentRow(undefined);
-                }}
-                updateModalVisible={updateModalVisible}
-                values={currentRow || {}}
+            <UpdateForm 
+                title={"新建管理员"}
+                updateModalVisible={createModalVisible}
+                currentRow={currentRow}
+                setCurrentRow={setCurrentRow}
+                handleUpdateModalVisible={handleModalVisible}
+                handleSubmit={handleAdd}
+                proTableRef={actionRef}
+                type={"add"}
             />
-
-            <Drawer
-                width={600}
-                visible={showDetail}
-                onClose={() => {
-                    setCurrentRow(undefined);
-                    setShowDetail(false);
-                }}
-                closable={false}
-            >
-                {currentRow?.name && (
-                    <ProDescriptions<API.RuleListItem>
-                        column={2}
-                        title={currentRow?.name}
-                        request={async () => ({
-                            data: currentRow || {},
-                        })}
-                        params={{
-                            id: currentRow?.name,
-                        }}
-                        columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}
-                    />
-                )}
-            </Drawer>
         </PageContainer>
     );
 };

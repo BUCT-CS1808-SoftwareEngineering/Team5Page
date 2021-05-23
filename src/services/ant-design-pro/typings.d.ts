@@ -13,7 +13,7 @@ declare namespace API {
     };
     type LoginResult = {
         message :  string;
-        code : number;
+        code : string;
         token : string;
     };
     type PageParams = {
@@ -139,16 +139,16 @@ declare namespace API {
         total?: number;
         success?: number;
         code?: string;
-        info?: Object;
+        info?: Object;  
     };
     type NormalUserItem = {
-        user_ID:number;
-        user_Name:string;
-        user_Phone:string;
-        user_Passwd:string;
-        user_Email:string;
-        user_Avatar:string;
-        if_com:boolean;
+        user_ID?:number;
+        user_Name?:string;
+        user_Phone?:string;
+        user_Passwd?:string;
+        user_Email?:string;
+        user_Avatar?:string;
+        if_com?:boolean;
     }
     type NormalUserList = {
         data?: NormalUserItem[];
@@ -158,9 +158,9 @@ declare namespace API {
         info?: Object;
     }
     type AdminItem = {
-        admin_ID:number;
-        admin_Name:string;
-        admin_Passwd:string;
+        admin_ID?:number;
+        admin_Name?:string;
+        admin_Passwd?:string;
     }
     type AdminList = {
         data?: AdminItem[];
@@ -169,6 +169,25 @@ declare namespace API {
         code?: string;
         info?: Object;
     }
+    type VideoItem = {
+        video_ID:number;
+        muse_ID:number;
+        user_ID:number;
+        video_Url:string;
+        video_IfShow:boolean;
+        video_Name:string;
+        video_Time:string;
+        video_Desciption:string;
+    }
+    type VideoList = {
+        data?: VideoItem[];
+        total?: number;
+        success?: number;
+        code?: string;
+        info?: Object;
+    }
+    type UpdateFormType = "add"|"update";
+
     type RuleListItem = {
         key?: number;
         disabled?: boolean;
@@ -183,7 +202,6 @@ declare namespace API {
         createdAt?: string;
         progress?: number;
     };
-
     type RuleList = {
         data?: RuleListItem[];
         /** 列表的内容总数 */

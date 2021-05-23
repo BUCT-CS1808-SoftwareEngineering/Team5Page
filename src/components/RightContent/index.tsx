@@ -1,4 +1,4 @@
-import { Tag, Space } from 'antd';
+import { Tag, Space, Button } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import React from 'react';
 import { useModel } from 'umi';
@@ -49,6 +49,14 @@ const GlobalHeaderRight: React.FC = () => {
                     },
                 ]}
             />
+            <span>
+                <Button
+                    type="primary"
+                    onClick = {()=>console.log("不会调用接口.202105240209")}
+                >
+                    备份
+                </Button>
+            </span>
             <span
                 className={styles.action}
                 onClick={() => {
@@ -63,7 +71,6 @@ const GlobalHeaderRight: React.FC = () => {
                     <Tag color={ENVTagColor[REACT_APP_ENV]}>{REACT_APP_ENV}</Tag>
                 </span>
             )}
-            {/* <SelectLang className={styles.action} /> */}
         </Space>
     );
 };

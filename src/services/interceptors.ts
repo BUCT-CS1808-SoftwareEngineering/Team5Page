@@ -1,8 +1,7 @@
 import { extend } from 'umi-request';
 
 const RealRequest = extend({
-    prefix: 'http://149.129.54.32:8080',
-    // prefix: 'http://192.144.230.213:3000'
+    prefix: 'http://192.144.230.213:8080'
 });
 RealRequest.interceptors.request.use(
     (url, options) => {

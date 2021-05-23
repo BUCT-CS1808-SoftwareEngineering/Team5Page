@@ -71,6 +71,12 @@
         component: './Feedback',
     },
     {
+        name: '讲解视频',
+        icon: 'table',
+        path: '/videos',
+        component: './Videos',
+    },
+    {
         name: '用户',
         icon: 'table',
         path: '/users',
@@ -91,7 +97,7 @@
     },
     {
         path: '/',
-        redirect: './Museum/MuseumInfo',
+        redirect: './museum/info',
     },
     {
         component: './404',

@@ -1,193 +1,139 @@
-import React from 'react';
-import { Modal } from 'antd';
-import {
-    ProFormSelect,
-    ProFormText,
-    ProFormTextArea,
-    StepsForm,
-    ProFormRadio,
-    ProFormDateTimePicker,
-} from '@ant-design/pro-form';
-import { useIntl, FormattedMessage } from 'umi';
-export type FormValueType = {
-    target?: string;
-    template?: string;
-    type?: string;
-    time?: string;
-    frequency?: string;
-} & Partial<API.RuleListItem>;
-export type UpdateFormProps = {
-    onCancel: (flag?: boolean, formVals?: FormValueType) => void;
-    onSubmit: (values: FormValueType) => Promise<void>;
+import React, { Dispatch, SetStateAction,useRef } from 'react';
+import {ProFormText,ModalForm, ProFormUploadDragger, ProFormTextArea} from '@ant-design/pro-form';
+import {FormInstance, message} from 'antd';
+import { ActionType } from '@ant-design/pro-table';
+import { addVideo } from '@/services/ant-design-pro/api';
+
+
+type UpdateFormProps = {
+    title: string;
     updateModalVisible: boolean;
-    values: Partial<API.RuleListItem>;
+    currentRow: API.VideoItem;
+    setCurrentRow: Dispatch<SetStateAction<API.VideoItem>>;
+    handleUpdateModalVisible: Dispatch<SetStateAction<boolean>>;
+    handleSubmit: (fields: API.VideoItem) => Promise<boolean>;
+    type: API.UpdateFormType;
+    proTableRef: React.MutableRefObject<ActionType | undefined>;
 };
 
 const UpdateForm: React.FC<UpdateFormProps> = (props) => {
-    const intl = useIntl();
+    const {title,updateModalVisible,currentRow,setCurrentRow,handleUpdateModalVisible,handleSubmit,proTableRef} = props;
+    const formRef = useRef<FormInstance>();
     return (
-        <StepsForm
-            stepsProps={{
-                size: 'small',
-            }}
-            stepsFormRender={(dom, submitter) => {
-                return (
-                    <Modal
-                        width={640}
-                        bodyStyle={{
-                            padding: '32px 40px 48px',
-                        }}
-                        destroyOnClose
-                        title={intl.formatMessage({
-                            id: 'pages.searchTable.updateForm.ruleConfig',
-                            defaultMessage: '规则配置',
-                        })}
-                        visible={props.updateModalVisible}
-                        footer={submitter}
-                        onCancel={() => {
-                            props.onCancel();
-                        }}
-                    >
-                        {dom}
-                    </Modal>
-                );
-            }}
-            onFinish={props.onSubmit}
-        >
-            <StepsForm.StepForm
-                initialValues={{
-                    name: props.values.name,
-                    desc: props.values.desc,
+        <ModalForm
+                formRef={formRef}
+                title={title}
+                width="400px"
+                visible={updateModalVisible}
+                onVisibleChange={handleUpdateModalVisible}
+                onFinish={async (value) => {
+                    const success = await handleSubmit({
+                        ...value,
+                        video_ID:currentRow.video_ID,
+                    } as API.VideoItem);
+                    if(success){
+                        handleUpdateModalVisible(false);
+                        setCurrentRow({});
+                        formRef.current?.resetFields();
+                        proTableRef.current?.reloadAndRest?.();
+                    }
                 }}
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.updateForm.basicConfig',
-                    defaultMessage: '基本信息',
-                })}
+                modalProps={{
+                    onCancel:()=>{
+                        setCurrentRow({});
+                        formRef.current?.resetFields();
+                    }
+                    
+                }}
             >
                 <ProFormText
-                    name="name"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.ruleName.nameLabel',
-                        defaultMessage: '规则名称',
-                    })}
-                    width="md"
                     rules={[
                         {
                             required: true,
-                            message: '请输入规则名称！',
-                        },
+                            message: '博物馆ID为必填项',
+                        }
                     ]}
+                    label="博物馆ID"
+                    placeholder='博物馆ID'
+                    width="md"
+                    name="muse_ID"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '用户ID为必填项',
+                        }
+                    ]}
+                    label='用户ID'
+                    placeholder='用户ID'
+                    width="md"
+                    name="user_ID"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '视频名为必填项',
+                        }
+                    ]}
+                    label="视频名"
+                    placeholder='视频名'
+                    width="md"
+                    name="video_Name"
+                />
+                <ProFormText
+                    rules={[
+                        {
+                            required: true,
+                            message: '视频时长为必填项',
+                        }
+                    ]}
+                    label="视频时长"
+                    placeholder='视频时长'
+                    width="md"
+                    name="video_Time"
                 />
                 <ProFormTextArea
-                    name="desc"
-                    width="md"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.ruleDesc.descLabel',
-                        defaultMessage: '规则描述',
-                    })}
-                    placeholder={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.ruleDesc.descPlaceholder',
-                        defaultMessage: '请输入至少五个字符',
-                    })}
                     rules={[
                         {
                             required: true,
-                            message: '请输入至少五个字符的规则描述！',
-                            min: 5,
-                        },
+                            message: '视频描述为必填项',
+                        }
                     ]}
-                />
-            </StepsForm.StepForm>
-            <StepsForm.StepForm
-                initialValues={{
-                    target: '0',
-                    template: '0',
-                }}
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.updateForm.ruleProps.title',
-                    defaultMessage: '配置规则属性',
-                })}
-            >
-                <ProFormSelect
-                    name="target"
+                    label='视频描述'
+                    placeholder='视频描述'
                     width="md"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.object',
-                        defaultMessage: '监控对象',
-                    })}
-                    valueEnum={{
-                        0: '表一',
-                        1: '表二',
+                    name="video_Description"
+                />
+                <ProFormUploadDragger
+                    max={4}
+                    label="视频"
+                    name="file"
+                    fieldProps={{
+                        customRequest: async (file) => {
+
+                            const formData = new FormData();
+                            formData.append('file',file.file,"[PROXY]");
+                            formData.append("user_ID", currentRow?.user_ID.toString() as string);
+                            formData.append("muse_ID", currentRow?.muse_ID.toString() as string);
+                            formData.append("video_Time", currentRow?.video_Time?.toString() as string);
+                            formData.append("video_Description", currentRow?.video_Desciption?.toString() as string);
+                            const hide = message.loading('正在添加');
+                            try {
+                                await addVideo(formData);
+                                hide();
+                                message.success('添加成功');
+                                return true;
+                            } catch (error) {
+                                hide();
+                                message.error('添加失败请重试！');
+                                return false;
+                            }
+                        }
                     }}
                 />
-                <ProFormSelect
-                    name="template"
-                    width="md"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.ruleProps.templateLabel',
-                        defaultMessage: '规则模板',
-                    })}
-                    valueEnum={{
-                        0: '规则模板一',
-                        1: '规则模板二',
-                    }}
-                />
-                <ProFormRadio.Group
-                    name="type"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.ruleProps.typeLabel',
-                        defaultMessage: '规则类型',
-                    })}
-                    options={[
-                        {
-                            value: '0',
-                            label: '强',
-                        },
-                        {
-                            value: '1',
-                            label: '弱',
-                        },
-                    ]}
-                />
-            </StepsForm.StepForm>
-            <StepsForm.StepForm
-                initialValues={{
-                    type: '1',
-                    frequency: 'month',
-                }}
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.updateForm.schedulingPeriod.title',
-                    defaultMessage: '设定调度周期',
-                })}
-            >
-                <ProFormDateTimePicker
-                    name="time"
-                    width="md"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.schedulingPeriod.timeLabel',
-                        defaultMessage: '开始时间',
-                    })}
-                    rules={[
-                        {
-                            required: true,
-                            message: '请选择开始时间！',
-                        },
-                    ]}
-                />
-                <ProFormSelect
-                    name="frequency"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.object',
-                        defaultMessage: '监控对象',
-                    })}
-                    width="md"
-                    valueEnum={{
-                        month: '月',
-                        week: '周',
-                    }}
-                />
-            </StepsForm.StepForm>
-        </StepsForm>
+            </ModalForm>
     );
 };
 

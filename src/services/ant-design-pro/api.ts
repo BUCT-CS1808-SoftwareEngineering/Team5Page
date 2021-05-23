@@ -119,9 +119,10 @@ export async function deleteNews(options?: { [key: string]: any }) {
 /** 获取评论列表 */
 export async function getComment(
     params: {
-        current?: number;
-        pageSize?: number;
-        pageIndex?: number;
+        com_IfShow: boolean;
+        current: number;
+        pageSize: number;
+        pageIndex: number;
     },
     options?: { [key: string]: any },
 ) {
@@ -129,6 +130,7 @@ export async function getComment(
         method: 'GET',
         params: {
             ...params,
+            com_IfShow:false,
         },
         ...(options || {}),
     });
@@ -156,9 +158,11 @@ export async function deleteComment(options?: { [key: string]: any }) {
 }
 /**修改评论 */
 export async function updateComment(options?: { [key: string]: any }) {
-    return request<API.CommentItem>('/api/comment', {
+    return RealRequest<API.CommentItem>('/api/comment', {
         method: 'PUT',
-        ...(options || {}),
+        data: {
+            ...(options || {}),
+        }
     });
 }
 /** 获取藏品列表 */
@@ -345,9 +349,11 @@ export async function addFeedback(options?: { [key: string]: any }) {
 }
 /**修改反馈 */
 export async function updateFeedback(options?: { [key: string]: any }) {
-    return request<API.FeedbackItem>('/api/feedback', {
+    return RealRequest<API.FeedbackItem>('/api/feedback', {
         method: 'PUT',
-        ...(options || {}),
+        data: {
+            ...(options || {}),
+        }
     });
 }
 /**删除反馈 */
@@ -390,10 +396,18 @@ export async function addNormalUser(options?: { [key: string]: any }) {
 }
 /**修改用户 */
 export async function updateNormalUser(options?: { [key: string]: any }) {
-    return request<API.NormalUserItem>('/api/user', {
+    return RealRequest<API.NormalUserItem>('/api/user', {
         method: 'PUT',
-        ...(options || {}),
+        data: {
+            ...(options || {}),
+        }
     });
+}
+export async function postUserAvatar(options?: { [key: string]: any }){
+    return RealRequest('/api/user/Avatar',{
+        method: 'POST',
+        ...(options || {}),
+    })
 }
 /**删除用户 */
 export async function deleteNormalUser(options?: { [key: string]: any }) {
@@ -435,10 +449,15 @@ export async function addAdmin(options?: { [key: string]: any }) {
 }
 /**修改管理员 */
 export async function updateAdmin(options?: { [key: string]: any }) {
-    return request<API.AdminItem>('/api/admin', {
-        method: 'PUT',
-        ...(options || {}),
-    });
+    return RealRequest<API.AdminItem>(
+        '/api/admin',
+        {
+            method: 'PUT',
+            data: {
+                ...(options || {}),
+            }
+        }
+    )
 }
 /**删除管理员 */
 export async function deleteAdmin(options?: { [key: string]: any }) {
@@ -449,6 +468,64 @@ export async function deleteAdmin(options?: { [key: string]: any }) {
         }
     })
 }
+/** 获取视频列表 */
+export async function getVideos(
+    params: {
+        current?: number;
+        pageSize?: number;
+        pageIndex?: number;
+    },
+    options?: { [key: string]: any },
+) {
+    return RealRequest<API.AdminItem>(`/api/video`, {
+        method: 'GET',
+        params: {
+            ...params,
+        },
+        ...(options || {}),
+    });
+}
+/**新增视频 */
+export async function addVideo(options?: { [key: string]: any }) {
+    return RealRequest<API.AdminItem>(
+        '/api/video',
+        {
+            method: 'POST',
+            headers: {
+                "content-type":"multipart/form-data; boundary=<calculated when request is sent>",
+            },
+            data: {
+                ...(options || {}),
+            }
+        }
+    )
+}
+/**审核视频 */
+export async function updateVideo(options?: { [key: string]: any }) {
+    return RealRequest<API.AdminItem>(
+        '/api/video',
+        {
+            method: 'PUT',
+            data: {
+                ...(options || {}),
+            }
+        }
+    )
+}
+/**删除视频 */
+export async function deleteVideo(options?: { [key: string]: any }) {
+    return RealRequest('/api/video', {
+        method: 'DELETE',
+        data: {
+            ...options,
+        }
+    })
+}
+// export async function backUp(options?: { [key: string]: any }){
+//     return RealRequest('/BAckup',{
+
+//     })
+// }
 
 
 

@@ -1,193 +1,90 @@
-import React from 'react';
-import { Modal } from 'antd';
-import {
-    ProFormSelect,
-    ProFormText,
-    ProFormTextArea,
-    StepsForm,
-    ProFormRadio,
-    ProFormDateTimePicker,
-} from '@ant-design/pro-form';
-import { useIntl, FormattedMessage } from 'umi';
-export type FormValueType = {
-    target?: string;
-    template?: string;
-    type?: string;
-    time?: string;
-    frequency?: string;
-} & Partial<API.NormalUserItem>;
-export type UpdateFormProps = {
-    onCancel: (flag?: boolean, formVals?: FormValueType) => void;
-    onSubmit: (values: FormValueType) => Promise<void>;
+import React, { Dispatch, SetStateAction,useRef } from 'react';
+import {ProFormText,ModalForm} from '@ant-design/pro-form';
+import type {FormInstance} from 'antd';
+import { ActionType } from '@ant-design/pro-table';
+
+type UpdateFormProps = {
+    title: string;
     updateModalVisible: boolean;
-    values: Partial<API.RuleListItem>;
+    currentRow: API.AdminItem;
+    setCurrentRow: Dispatch<SetStateAction<API.AdminItem>>;
+    handleUpdateModalVisible: Dispatch<SetStateAction<boolean>>;
+    handleSubmit: (fields: API.AdminItem) => Promise<boolean>;
+    type: API.UpdateFormType;
+    proTableRef: React.MutableRefObject<ActionType | undefined>;
 };
 
 const UpdateForm: React.FC<UpdateFormProps> = (props) => {
-    const intl = useIntl();
+    const {title,updateModalVisible,currentRow,setCurrentRow,handleUpdateModalVisible,handleSubmit,type,proTableRef} = props;
+    const formRef = useRef<FormInstance>();
     return (
-        <StepsForm
-            stepsProps={{
-                size: 'small',
-            }}
-            stepsFormRender={(dom, submitter) => {
-                return (
-                    <Modal
-                        width={640}
-                        bodyStyle={{
-                            padding: '32px 40px 48px',
-                        }}
-                        destroyOnClose
-                        title={intl.formatMessage({
-                            id: 'pages.searchTable.updateForm.用户配置',
-                            defaultMessage: '用户配置',
-                        })}
-                        visible={props.updateModalVisible}
-                        footer={submitter}
-                        onCancel={() => {
-                            props.onCancel();
-                        }}
-                    >
-                        {dom}
-                    </Modal>
-                );
-            }}
-            onFinish={props.onSubmit}
-        >
-            <StepsForm.StepForm
-                initialValues={{
-                    name: props.values.name,
-                    desc: props.values.desc,
+        <ModalForm
+                formRef={formRef}
+                title={title}
+                width="400px"
+                visible={updateModalVisible}
+                onVisibleChange={(visible)=>{
+                    if(type === "update" && visible===true){
+                        formRef.current?.setFieldsValue({
+                            admin_Name:currentRow.admin_Name,
+                            admin_Passwd:currentRow.admin_Passwd,
+                        })
+                    }
+                    return handleUpdateModalVisible(visible);
                 }}
-                title={intl.formatMessage({
-                    id: '',
-                    defaultMessage: '基本信息',
-                })}
+                onFinish={async (value) => {
+                    const success = await handleSubmit({
+                        ...value,
+                        admin_ID:currentRow.admin_ID,
+                    } as API.AdminItem);
+                    if(success){
+                        handleUpdateModalVisible(false);
+                        setCurrentRow({});
+                        formRef.current?.resetFields();
+                        proTableRef.current?.reloadAndRest?.();
+                    }
+                }}
+                modalProps={{
+                    onCancel:()=>{
+                        setCurrentRow({});
+                        formRef.current?.resetFields();
+                    }
+                    
+                }}
             >
                 <ProFormText
-                    name="user_Name"
-                    label={intl.formatMessage({
-                        id: '用户名',
-                        defaultMessage: '用户名',
-                    })}
-                    width="md"
                     rules={[
                         {
                             required: true,
-                            message: '请输入用户名！',
+                            message: '管理员用户名为必填项',
                         },
+                        {
+                            type:"string",
+                            message: '用户名为字符串'
+                        }
                     ]}
+                    label="管理员用户名"
+                    placeholder='管理员用户名'
+                    width="md"
+                    name="admin_Name"
                 />
                 <ProFormText
-                    name="user_Passwd"
-                    width="md"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.ruleDesc.descLabel',
-                        defaultMessage: '规则描述',
-                    })}
-                    placeholder={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.ruleDesc.descPlaceholder',
-                        defaultMessage: '请输入至少五个字符',
-                    })}
                     rules={[
                         {
                             required: true,
-                            message: '请输入至少五个字符的规则描述！',
-                            min: 5,
-                        },
-                    ]}
-                />
-            </StepsForm.StepForm>
-            <StepsForm.StepForm
-                initialValues={{
-                    target: '0',
-                    template: '0',
-                }}
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.updateForm.ruleProps.title',
-                    defaultMessage: '配置规则属性',
-                })}
-            >
-                <ProFormSelect
-                    name="target"
-                    width="md"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.object',
-                        defaultMessage: '监控对象',
-                    })}
-                    valueEnum={{
-                        0: '表一',
-                        1: '表二',
-                    }}
-                />
-                <ProFormSelect
-                    name="template"
-                    width="md"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.ruleProps.templateLabel',
-                        defaultMessage: '规则模板',
-                    })}
-                    valueEnum={{
-                        0: '规则模板一',
-                        1: '规则模板二',
-                    }}
-                />
-                <ProFormRadio.Group
-                    name="type"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.ruleProps.typeLabel',
-                        defaultMessage: '规则类型',
-                    })}
-                    options={[
-                        {
-                            value: '0',
-                            label: '强',
+                            message: '管理员密码为必填项',
                         },
                         {
-                            value: '1',
-                            label: '弱',
-                        },
+                            type:"string",
+                            message: '密码为字符串'
+                        }
                     ]}
-                />
-            </StepsForm.StepForm>
-            <StepsForm.StepForm
-                initialValues={{
-                    type: '1',
-                    frequency: 'month',
-                }}
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.updateForm.schedulingPeriod.title',
-                    defaultMessage: '设定调度周期',
-                })}
-            >
-                <ProFormDateTimePicker
-                    name="time"
+                    label='管理员密码'
+                    placeholder='管理员密码'
                     width="md"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.schedulingPeriod.timeLabel',
-                        defaultMessage: '开始时间',
-                    })}
-                    rules={[
-                        {
-                            required: true,
-                            message: '请选择开始时间！',
-                        },
-                    ]}
+                    name="admin_Passwd"
                 />
-                <ProFormSelect
-                    name="frequency"
-                    label={intl.formatMessage({
-                        id: 'pages.searchTable.updateForm.object',
-                        defaultMessage: '监控对象',
-                    })}
-                    width="md"
-                    valueEnum={{
-                        month: '月',
-                        week: '周',
-                    }}
-                />
-            </StepsForm.StepForm>
-        </StepsForm>
+            </ModalForm>
     );
 };
 

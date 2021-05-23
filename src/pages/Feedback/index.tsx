@@ -1,18 +1,12 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer,Image } from 'antd';
+import { Button, message } from 'antd';
 import React, { useState, useRef } from 'react';
-import { useIntl, FormattedMessage } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
-import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
-import ProDescriptions from '@ant-design/pro-descriptions';
-import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
-import { updateRule } from '@/services/ant-design-pro/api';
 
-import { getFeedback, addFeedback, deleteFeedback } from '@/services/ant-design-pro/api';
+import { getFeedback, addFeedback, deleteFeedback,updateFeedback } from '@/services/ant-design-pro/api';
 /**
  * 添加博物馆
  *
@@ -39,15 +33,11 @@ const handleAdd = async (fields: API.FeedbackItem) => {
  * @param fields
  */
 
-const handleUpdate = async (fields: FormValueType) => {
+const handleUpdate = async (fields: API.FeedbackItem) => {
     const hide = message.loading('正在配置');
 
     try {
-        await updateRule({
-            name: fields.name,
-            desc: fields.desc,
-            key: fields.key,
-        });
+        await updateFeedback(fields);
         hide();
         message.success('配置成功');
         return true;
@@ -82,18 +72,11 @@ const handleRemove = async (selectedRows: API.FeedbackItem[]) => {
 };
 
 const TableList: React.FC = () => {
-    /** 新建窗口的弹窗 */
     const [createModalVisible, handleModalVisible] = useState<boolean>(false);
-    /** 分布更新窗口的弹窗 */
-
     const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
-    const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
     const [currentRow, setCurrentRow] = useState<API.FeedbackItem>();
     const [selectedRowsState, setSelectedRows] = useState<API.FeedbackItem[]>([]);
-    /** 国际化配置 */
-
-    const intl = useIntl();
     const columns: ProColumns<API.FeedbackItem>[] = [
         {
             title: '反馈ID',
@@ -145,10 +128,7 @@ const TableList: React.FC = () => {
     return (
         <PageContainer>
             <ProTable<API.FeedbackItem, API.PageParams>
-                headerTitle={intl.formatMessage({
-                    id: 'pages.searchTable.title',
-                    defaultMessage: '查询表格',
-                })}
+                headerTitle="查询表格"
                 actionRef={actionRef}
                 rowKey="fdback_ID"
                 search={{
@@ -200,126 +180,26 @@ const TableList: React.FC = () => {
                     </Button>
                 </FooterToolbar>
             )}
-            <ModalForm
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.新建反馈',
-                    defaultMessage: '新建反馈',
-                })}
-                width="400px"
-                visible={createModalVisible}
-                onVisibleChange={handleModalVisible}
-                onFinish={async (value) => {
-                    const success = await handleAdd(value as API.FeedbackItem);
-
-                    if (success) {
-                        handleModalVisible(false);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-            >
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '博物馆ID为必填项',
-                        },
-                    ]}
-                    placeholder='博物馆ID'
-                    width="md"
-                    name="muse_ID"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '用户ID为必填项',
-                        },
-                    ]}
-                    placeholder='用户ID'
-                    width="md"
-                    name="user_ID"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '环境评分为必填项',
-                        },
-                    ]}
-                    placeholder='环境评分'
-                    width="md"
-                    name="env_Review"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '展览评分为必填项',
-                        },
-                    ]}
-                    placeholder='展览评分'
-                    width="md"
-                    name="exhibt_Review"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '服务评分为必填项',
-                        },
-                    ]}
-                    placeholder='服务评分'
-                    width="md"
-                    name="service_Review"
-                />
-            </ModalForm>
-            <UpdateForm
-                onSubmit={async (value) => {
-                    const success = await handleUpdate(value);
-
-                    if (success) {
-                        handleUpdateModalVisible(false);
-                        setCurrentRow(undefined);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-                onCancel={() => {
-                    handleUpdateModalVisible(false);
-                    setCurrentRow(undefined);
-                }}
-                updateModalVisible={updateModalVisible}
-                values={currentRow || {}}
+            <UpdateForm 
+                title={"新建反馈"}
+                updateModalVisible={createModalVisible}
+                currentRow={currentRow}
+                setCurrentRow={setCurrentRow}
+                handleUpdateModalVisible={handleModalVisible}
+                handleSubmit={handleAdd}
+                proTableRef={actionRef}
+                type={"add"}
             />
-
-            <Drawer
-                width={600}
-                visible={showDetail}
-                onClose={() => {
-                    setCurrentRow(undefined);
-                    setShowDetail(false);
-                }}
-                closable={false}
-            >
-                {currentRow?.name && (
-                    <ProDescriptions<API.RuleListItem>
-                        column={2}
-                        title={currentRow?.name}
-                        request={async () => ({
-                            data: currentRow || {},
-                        })}
-                        params={{
-                            id: currentRow?.name,
-                        }}
-                        columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}
-                    />
-                )}
-            </Drawer>
+            <UpdateForm 
+                title={"修改评论"}
+                updateModalVisible={updateModalVisible}
+                currentRow={currentRow}
+                setCurrentRow={setCurrentRow}
+                handleUpdateModalVisible={handleUpdateModalVisible}
+                handleSubmit={handleUpdate}
+                proTableRef={actionRef}
+                type={"update"}
+            />
         </PageContainer>
     );
 };

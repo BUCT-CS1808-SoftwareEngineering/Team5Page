@@ -1,13 +1,11 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Drawer } from 'antd';
+import { Button, message } from 'antd';
 import React, { useState, useRef } from 'react';
 import { useIntl } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
-import type { FormValueType } from './components/UpdateForm';
-import { updateRule } from '@/services/ant-design-pro/api';
 
 import { getNews, addNews, deleteNews } from '@/services/ant-design-pro/api';
 /**

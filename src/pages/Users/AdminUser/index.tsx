@@ -1,21 +1,15 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer,Image } from 'antd';
+import { Button, message } from 'antd';
 import React, { useState, useRef } from 'react';
-import { useIntl, FormattedMessage } from 'umi';
+import { useIntl } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
-import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
-import ProDescriptions from '@ant-design/pro-descriptions';
-import type { FormValueType } from './components/UpdateForm';
-import UpdateForm from './components/UpdateForm';
-import { updateRule } from '@/services/ant-design-pro/api';
-
+import UpdateForm from './components/UpdateForm'
 import { getAdmin, addAdmin, deleteAdmin,updateAdmin } from '@/services/ant-design-pro/api';
-import { AntdIconProps } from '@ant-design/icons/lib/components/AntdIcon';
+
 /**
- * 添加博物馆
+ * 添加管理员
  *
  * @param fields
  */
@@ -35,7 +29,7 @@ const handleAdd = async (fields: API.AdminItem) => {
     }
 };
 /**
- * 更新节点
+ * 更新管理员
  *
  * @param fields
  */
@@ -44,7 +38,7 @@ const handleUpdate = async (fields: API.AdminItem) => {
     const hide = message.loading('正在配置');
 
     try {
-        await updateRule(fields);
+        await updateAdmin(fields);
         hide();
         message.success('配置成功');
         return true;
@@ -55,7 +49,7 @@ const handleUpdate = async (fields: API.AdminItem) => {
     }
 };
 /**
- * 删除节点
+ * 删除管理员
  *
  * @param selectedRows
  */
@@ -79,16 +73,11 @@ const handleRemove = async (selectedRows: API.AdminItem[]) => {
 };
 
 const TableList: React.FC = () => {
-    /** 新建窗口的弹窗 */
     const [createModalVisible, handleModalVisible] = useState<boolean>(false);
-    /** 分布更新窗口的弹窗 */
-
     const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
-    const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
-    const [currentRow, setCurrentRow] = useState<API.AdminItem>();
+    const [currentRow, setCurrentRow] = useState<API.AdminItem>({});
     const [selectedRowsState, setSelectedRows] = useState<API.AdminItem[]>([]);
-    /** 国际化配置 */
 
     const intl = useIntl();
     const columns: ProColumns<API.AdminItem>[] = [
@@ -179,135 +168,26 @@ const TableList: React.FC = () => {
                     </Button>
                 </FooterToolbar>
             )}
-            <ModalForm
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.新建管理员',
-                    defaultMessage: '新建管理员',
-                })}
-                width="400px"
-                visible={createModalVisible}
-                onVisibleChange={handleModalVisible}
-                onFinish={async (value) => {
-                    const success = await handleAdd(value as API.AdminItem);
-
-                    if (success) {
-                        handleModalVisible(false);
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-            >
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '管理员用户名为必填项',
-                        },
-                    ]}
-                    placeholder='管理员用户名'
-                    width="md"
-                    name="admin_Name"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '管理员密码为必填项',
-                        },
-                    ]}
-                    placeholder='管理员密码'
-                    width="md"
-                    name="admin_Passwd"
-                />
-            </ModalForm>
-            <ModalForm
-                title={intl.formatMessage({
-                    id: '修改管理员',
-                    defaultMessage: '修改管理员',
-                })}
-                width="400px"
-                visible={updateModalVisible}
-                onVisibleChange={handleUpdateModalVisible}
-                onFinish={async (value) => {
-                    const success = await handleUpdate(value as API.AdminItem);
-
-                    if (success) {
-                        handleUpdateModalVisible(false);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-            >
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '管理员用户名为必填项',
-                        },
-                    ]}
-                    placeholder='管理员用户名'
-                    width="md"
-                    name="admin_Name"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '管理员密码为必填项',
-                        },
-                    ]}
-                    placeholder='管理员密码'
-                    width="md"
-                    name="admin_Passwd"
-                />
-            </ModalForm>
-            {/* <UpdateForm
-                onSubmit={async (value) => {
-                    const success = await handleUpdate(value);
-
-                    if (success) {
-                        handleUpdateModalVisible(false);
-                        setCurrentRow(undefined);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-                onCancel={() => {
-                    handleUpdateModalVisible(false);
-                    setCurrentRow(undefined);
-                }}
+            <UpdateForm 
+                title={"新建管理员"}
+                updateModalVisible={createModalVisible}
+                currentRow={currentRow}
+                setCurrentRow={setCurrentRow}
+                handleUpdateModalVisible={handleModalVisible}
+                handleSubmit={handleAdd}
+                proTableRef={actionRef}
+                type={"add"}
+            />
+            <UpdateForm 
+                title={"修改管理员"}
                 updateModalVisible={updateModalVisible}
-                values={currentRow || {}}
-            /> */}
-
-            <Drawer
-                width={600}
-                visible={showDetail}
-                onClose={() => {
-                    setCurrentRow(undefined);
-                    setShowDetail(false);
-                }}
-                closable={false}
-            >
-                {currentRow?.name && (
-                    <ProDescriptions<API.RuleListItem>
-                        column={2}
-                        title={currentRow?.name}
-                        request={async () => ({
-                            data: currentRow || {},
-                        })}
-                        params={{
-                            id: currentRow?.name,
-                        }}
-                        columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}
-                    />
-                )}
-            </Drawer>
+                currentRow={currentRow}
+                setCurrentRow={setCurrentRow}
+                handleUpdateModalVisible={handleUpdateModalVisible}
+                handleSubmit={handleUpdate}
+                proTableRef={actionRef}
+                type={"update"}
+            />
         </PageContainer>
     );
 };

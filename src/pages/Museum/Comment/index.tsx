@@ -1,16 +1,10 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer, Image } from 'antd';
+import { Button, message } from 'antd';
 import React, { useState, useRef } from 'react';
-import { useIntl, FormattedMessage } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
-import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
-import ProDescriptions from '@ant-design/pro-descriptions';
-import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
-import { updateRule } from '@/services/ant-design-pro/api';
 
 import { getComment, addComment, deleteComment, updateComment } from '@/services/ant-design-pro/api';
 /**
@@ -39,15 +33,11 @@ const handleAdd = async (fields: API.CommentItem) => {
  * @param fields
  */
 
-const handleUpdate = async (fields: FormValueType) => {
+const handleUpdate = async (fields: API.CommentItem) => {
     const hide = message.loading('正在配置');
 
     try {
-        await updateRule({
-            name: fields.name,
-            desc: fields.desc,
-            key: fields.key,
-        });
+        await updateComment(fields);
         hide();
         message.success('配置成功');
         return true;
@@ -82,18 +72,12 @@ const handleRemove = async (selectedRows: API.CommentItem[]) => {
 };
 
 const TableList: React.FC = () => {
-    /** 新建窗口的弹窗 */
     const [createModalVisible, handleModalVisible] = useState<boolean>(false);
-    /** 更新窗口的弹窗 */
-
     const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
-    const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
     const [currentRow, setCurrentRow] = useState<API.CommentItem>();
     const [selectedRowsState, setSelectedRows] = useState<API.CommentItem[]>([]);
-    /** 国际化配置 */
 
-    const intl = useIntl();
     const columns: ProColumns<API.CommentItem>[] = [
         {
             title: '用户ID',
@@ -142,10 +126,7 @@ const TableList: React.FC = () => {
     return (
         <PageContainer>
             <ProTable<API.CommentItem, API.PageParams>
-                headerTitle={intl.formatMessage({
-                    id: 'pages.searchTable.title',
-                    defaultMessage: '查询表格',
-                })}
+                headerTitle="查询表格"
                 actionRef={actionRef}
                 rowKey="com_ID"
                 search={false}
@@ -195,128 +176,26 @@ const TableList: React.FC = () => {
                     </Button>
                 </FooterToolbar>
             )}
-            <ModalForm
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.新增评论',
-                    defaultMessage: '新增评论',
-                })}
-                width="400px"
-                visible={createModalVisible}
-                onVisibleChange={handleModalVisible}
-                onFinish={async (value) => {
-                    const success = await handleAdd(value as API.CommentItem);
-
-                    if (success) {
-                        handleModalVisible(false);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-            >
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '用户ID为必填项',
-                        },
-                    ]}
-                    placeholder='用户ID'
-                    width="md"
-                    name="user_ID"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '博物馆ID为必填项',
-                        },
-                    ]}
-                    placeholder='博物馆ID'
-                    width="md"
-                    name="muse_ID"
-                />
-                <ProFormTextArea
-                    rules={[
-                        {
-                            required: true,
-                            message: '评论内容为必填项',
-                        },
-                    ]}
-                    placeholder='评论内容'
-                    width="md"
-                    name="com_Info"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '时间为必填项',
-                        },
-                    ]}
-                    initialValue={new Date().toLocaleDateString()}
-                    placeholder="时间"
-                    width="md"
-                    name="com_Time"
-                />
-                <ProFormText
-                    rules={[
-                        {
-                            required: true,
-                            message: '是否显示为必填项',
-                        },
-                    ]}
-                    initialValue={false}
-                    placeholder="是否显示"
-                    width="md"
-                    name="com_IfShow"
-                />
-            </ModalForm>
-            <UpdateForm
-                onSubmit={async (value) => {
-                    const success = await handleUpdate(value);
-
-                    if (success) {
-                        handleUpdateModalVisible(false);
-                        setCurrentRow(undefined);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-                onCancel={() => {
-                    handleUpdateModalVisible(false);
-                    setCurrentRow(undefined);
-                }}
-                updateModalVisible={updateModalVisible}
-                values={currentRow || {}}
+            <UpdateForm 
+                title={"新建评论"}
+                updateModalVisible={createModalVisible}
+                currentRow={currentRow}
+                setCurrentRow={setCurrentRow}
+                handleUpdateModalVisible={handleModalVisible}
+                handleSubmit={handleAdd}
+                proTableRef={actionRef}
+                type={"add"}
             />
-
-            <Drawer
-                width={600}
-                visible={showDetail}
-                onClose={() => {
-                    setCurrentRow(undefined);
-                    setShowDetail(false);
-                }}
-                closable={false}
-            >
-                {currentRow?.name && (
-                    <ProDescriptions<API.RuleListItem>
-                        column={2}
-                        title={currentRow?.name}
-                        request={async () => ({
-                            data: currentRow || {},
-                        })}
-                        params={{
-                            id: currentRow?.name,
-                        }}
-                        columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}
-                    />
-                )}
-            </Drawer>
+            <UpdateForm 
+                title={"修改评论"}
+                updateModalVisible={updateModalVisible}
+                currentRow={currentRow}
+                setCurrentRow={setCurrentRow}
+                handleUpdateModalVisible={handleUpdateModalVisible}
+                handleSubmit={handleUpdate}
+                proTableRef={actionRef}
+                type={"update"}
+            />
         </PageContainer>
     );
 };

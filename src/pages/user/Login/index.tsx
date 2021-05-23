@@ -31,7 +31,7 @@ const goto = () => {
         const { redirect } = query as {
             redirect: string;
         };
-        history.push(redirect || '/');
+        history.push(redirect || '/museum/info');
     }, 10);
 };
 
@@ -55,7 +55,7 @@ const Login: React.FC = () => {
         try {
             // 登录
             const msg = await login({ ...values });
-            if (msg.code === 1) {
+            if (msg.code === "success") {
                 const defaultloginSuccessMessage = intl.formatMessage({
                     id: 'pages.login.success',
                     defaultMessage: '登录成功！',
@@ -123,7 +123,7 @@ const Login: React.FC = () => {
                         }}
                     >
 
-                        {code === -1 && (
+                        {code === "error" && (
                             <LoginMessage
                                 content={intl.formatMessage({
                                     id: 'pages.login.accountLogin.errorMessage',
