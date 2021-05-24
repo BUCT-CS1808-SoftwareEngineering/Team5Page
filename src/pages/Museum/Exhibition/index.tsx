@@ -1,16 +1,10 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer,Image } from 'antd';
+import { Button, message,Image } from 'antd';
 import React, { useState, useRef } from 'react';
-import { useIntl, FormattedMessage } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
-import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
-import ProDescriptions from '@ant-design/pro-descriptions';
-import type { FormValueType } from './components/UpdateForm';
-import UpdateForm from './components/UpdateForm';
-import { updateRule } from '@/services/ant-design-pro/api';
 
 import { getExhibition, addExhibition, deleteExhibition } from '@/services/ant-design-pro/api';
 /**
@@ -30,30 +24,6 @@ const handleAdd = async (fields: API.ExhibitionItem) => {
     } catch (error) {
         hide();
         message.error('添加失败请重试！');
-        return false;
-    }
-};
-/**
- * 更新节点
- *
- * @param fields
- */
-
-const handleUpdate = async (fields: FormValueType) => {
-    const hide = message.loading('正在配置');
-
-    try {
-        await updateRule({
-            name: fields.name,
-            desc: fields.desc,
-            key: fields.key,
-        });
-        hide();
-        message.success('配置成功');
-        return true;
-    } catch (error) {
-        hide();
-        message.error('配置失败请重试！');
         return false;
     }
 };
@@ -84,16 +54,8 @@ const handleRemove = async (selectedRows: API.ExhibitionItem[]) => {
 const TableList: React.FC = () => {
     /** 新建窗口的弹窗 */
     const [createModalVisible, handleModalVisible] = useState<boolean>(false);
-    /** 分布更新窗口的弹窗 */
-
-    const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
-    const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
-    const [currentRow, setCurrentRow] = useState<API.ExhibitionItem>();
     const [selectedRowsState, setSelectedRows] = useState<API.ExhibitionItem[]>([]);
-    /** 国际化配置 */
-
-    const intl = useIntl();
     const columns: ProColumns<API.ExhibitionItem>[] = [
         {
             title: '展览ID',
@@ -127,10 +89,7 @@ const TableList: React.FC = () => {
     return (
         <PageContainer>
             <ProTable<API.ExhibitionItem, API.PageParams>
-                headerTitle={intl.formatMessage({
-                    id: 'pages.searchTable.title',
-                    defaultMessage: '查询表格',
-                })}
+                headerTitle="查询表格"
                 actionRef={actionRef}
                 rowKey="exhib_ID"
                 search={{
@@ -183,10 +142,7 @@ const TableList: React.FC = () => {
                 </FooterToolbar>
             )}
             <ModalForm
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.新建展览信息',
-                    defaultMessage: '新建展览信息',
-                })}
+                title="新建展览信息"
                 width="400px"
                 visible={createModalVisible}
                 onVisibleChange={handleModalVisible}
@@ -247,50 +203,6 @@ const TableList: React.FC = () => {
                     name="exhib_Pic"
                 />
             </ModalForm>
-            <UpdateForm
-                onSubmit={async (value) => {
-                    const success = await handleUpdate(value);
-
-                    if (success) {
-                        handleUpdateModalVisible(false);
-                        setCurrentRow(undefined);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-                onCancel={() => {
-                    handleUpdateModalVisible(false);
-                    setCurrentRow(undefined);
-                }}
-                updateModalVisible={updateModalVisible}
-                values={currentRow || {}}
-            />
-
-            <Drawer
-                width={600}
-                visible={showDetail}
-                onClose={() => {
-                    setCurrentRow(undefined);
-                    setShowDetail(false);
-                }}
-                closable={false}
-            >
-                {currentRow?.name && (
-                    <ProDescriptions<API.RuleListItem>
-                        column={2}
-                        title={currentRow?.name}
-                        request={async () => ({
-                            data: currentRow || {},
-                        })}
-                        params={{
-                            id: currentRow?.name,
-                        }}
-                        columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}
-                    />
-                )}
-            </Drawer>
         </PageContainer>
     );
 };

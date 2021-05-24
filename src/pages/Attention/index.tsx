@@ -1,13 +1,10 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Drawer } from 'antd';
+import { Button, message } from 'antd';
 import React, { useState, useRef } from 'react';
-import { useIntl, FormattedMessage } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
 import { ModalForm, ProFormText } from '@ant-design/pro-form';
-import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
-import ProDescriptions from '@ant-design/pro-descriptions';
 
 import { getAttention, addAttention, deleteAttention } from '@/services/ant-design-pro/api';
 /**
@@ -57,13 +54,9 @@ const handleRemove = async (selectedRows: API.AttentionItem[]) => {
 const TableList: React.FC = () => {
     /** 新建窗口的弹窗 */
     const [createModalVisible, handleModalVisible] = useState<boolean>(false);
-    const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
     const [currentRow, setCurrentRow] = useState<API.AttentionItem>();
     const [selectedRowsState, setSelectedRows] = useState<API.AttentionItem[]>([]);
-    /** 国际化配置 */
-
-    const intl = useIntl();
     const columns: ProColumns<API.AttentionItem>[] = [
         {
             title: '关注ID',
@@ -83,10 +76,7 @@ const TableList: React.FC = () => {
     return (
         <PageContainer>
             <ProTable<API.AttentionItem, API.PageParams>
-                headerTitle={intl.formatMessage({
-                    id: 'pages.searchTable.title',
-                    defaultMessage: '查询表格',
-                })}
+                headerTitle="查询表格"
                 actionRef={actionRef}
                 rowKey="att_ID"
                 search={{
@@ -139,10 +129,7 @@ const TableList: React.FC = () => {
                 </FooterToolbar>
             )}
             <ModalForm
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.新建博物馆',
-                    defaultMessage: '新建博物馆',
-                })}
+                title="新建博物馆"
                 width="400px"
                 visible={createModalVisible}
                 onVisibleChange={handleModalVisible}
@@ -181,29 +168,6 @@ const TableList: React.FC = () => {
                     name="user_ID"
                 />
             </ModalForm>
-            <Drawer
-                width={600}
-                visible={showDetail}
-                onClose={() => {
-                    setCurrentRow(undefined);
-                    setShowDetail(false);
-                }}
-                closable={false}
-            >
-                {currentRow?.name && (
-                    <ProDescriptions<API.RuleListItem>
-                        column={2}
-                        title={currentRow?.name}
-                        request={async () => ({
-                            data: currentRow || {},
-                        })}
-                        params={{
-                            id: currentRow?.name,
-                        }}
-                        columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}
-                    />
-                )}
-            </Drawer>
         </PageContainer>
     );
 };

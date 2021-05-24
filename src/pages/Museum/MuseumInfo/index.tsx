@@ -1,16 +1,12 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Drawer,Image } from 'antd';
+import { Button, message,Image } from 'antd';
 import React, { useState, useRef } from 'react';
-import { useIntl } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
-import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
-import ProDescriptions from '@ant-design/pro-descriptions';
-import UpdateForm, { FormValueType } from './components/UpdateForm';
 
-import { getMuseum, addMuseum, deleteMuseum,updateRule } from '@/services/ant-design-pro/api';
+import { getMuseum, addMuseum, deleteMuseum } from '@/services/ant-design-pro/api';
 /**
  * 添加博物馆
  *
@@ -28,30 +24,6 @@ const handleAdd = async (fields: API.MuseumListItem) => {
     } catch (error) {
         hide();
         message.error('添加失败请重试！');
-        return false;
-    }
-};
-/**
- * 更新新闻
- *
- * @param fields
- */
-
- const handleUpdate = async (fields: FormValueType) => {
-    const hide = message.loading('正在配置');
-
-    try {
-        await updateRule({
-            name: fields.name,
-            desc: fields.desc,
-            key: fields.key,
-        });
-        hide();
-        message.success('配置成功');
-        return true;
-    } catch (error) {
-        hide();
-        message.error('配置失败请重试！');
         return false;
     }
 };
@@ -82,16 +54,8 @@ const handleRemove = async (selectedRows: API.MuseumListItem[]) => {
 const TableList: React.FC = () => {
     /** 新建窗口的弹窗 */
     const [createModalVisible, handleModalVisible] = useState<boolean>(false);
-    /** 分布更新窗口的弹窗 */
-
-    const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
-    const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
-    const [currentRow, setCurrentRow] = useState<API.MuseumListItem>();
     const [selectedRowsState, setSelectedRows] = useState<API.MuseumListItem[]>([]);
-    /** 国际化配置 */
-
-    const intl = useIntl();
     const columns: ProColumns<API.MuseumListItem>[] = [
         {
             title: '馆名',
@@ -135,10 +99,7 @@ const TableList: React.FC = () => {
     return (
         <PageContainer>
             <ProTable<API.MuseumListItem, API.PageParams>
-                headerTitle={intl.formatMessage({
-                    id: 'pages.searchTable.title',
-                    defaultMessage: '查询表格',
-                })}
+                headerTitle="查询表格"
                 actionRef={actionRef}
                 rowKey="muse_ID"
                 search={{
@@ -191,10 +152,7 @@ const TableList: React.FC = () => {
                 </FooterToolbar>
             )}
             <ModalForm
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.新建博物馆',
-                    defaultMessage: '新建博物馆',
-                })}
+                title="新建博物馆"
                 width="400px"
                 visible={createModalVisible}
                 onVisibleChange={handleModalVisible}
@@ -289,50 +247,6 @@ const TableList: React.FC = () => {
                     name="muse_Ename"
                 />
             </ModalForm>
-            <UpdateForm
-                onSubmit={async (value) => {
-                    const success = await handleUpdate(value);
-
-                    if (success) {
-                        handleUpdateModalVisible(false);
-                        setCurrentRow(undefined);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-                onCancel={() => {
-                    handleUpdateModalVisible(false);
-                    setCurrentRow(undefined);
-                }}
-                updateModalVisible={updateModalVisible}
-                values={currentRow || {}}
-            />
-
-            <Drawer
-                width={600}
-                visible={showDetail}
-                onClose={() => {
-                    setCurrentRow(undefined);
-                    setShowDetail(false);
-                }}
-                closable={false}
-            >
-                {currentRow?.name && (
-                    <ProDescriptions<API.RuleListItem>
-                        column={2}
-                        title={currentRow?.name}
-                        request={async () => ({
-                            data: currentRow || {},
-                        })}
-                        params={{
-                            id: currentRow?.name,
-                        }}
-                        columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}
-                    />
-                )}
-            </Drawer>
         </PageContainer>
     );
 };

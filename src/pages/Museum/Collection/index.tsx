@@ -1,16 +1,10 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, message, Input, Drawer,Image } from 'antd';
+import { Button, message,Image } from 'antd';
 import React, { useState, useRef } from 'react';
-import { useIntl, FormattedMessage } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
-import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
-import ProDescriptions from '@ant-design/pro-descriptions';
-import type { FormValueType } from './components/UpdateForm';
-import UpdateForm from './components/UpdateForm';
-import { updateRule } from '@/services/ant-design-pro/api';
 
 import { getCollection, addCollection, deleteCollection } from '@/services/ant-design-pro/api';
 /**
@@ -58,18 +52,9 @@ const handleRemove = async (selectedRows: API.CollectionItem[]) => {
 };
 
 const TableList: React.FC = () => {
-    /** 新建窗口的弹窗 */
     const [createModalVisible, handleModalVisible] = useState<boolean>(false);
-    /** 分布更新窗口的弹窗 */
-
-    const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
-    const [showDetail, setShowDetail] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
-    const [currentRow, setCurrentRow] = useState<API.CollectionItem>();
     const [selectedRowsState, setSelectedRows] = useState<API.CollectionItem[]>([]);
-    /** 国际化配置 */
-
-    const intl = useIntl();
     const columns: ProColumns<API.CollectionItem>[] = [
         {
             title: '藏品ID',
@@ -103,10 +88,7 @@ const TableList: React.FC = () => {
     return (
         <PageContainer>
             <ProTable<API.CollectionItem, API.PageParams>
-                headerTitle={intl.formatMessage({
-                    id: 'pages.searchTable.title',
-                    defaultMessage: '查询表格',
-                })}
+                headerTitle="查询表格"
                 actionRef={actionRef}
                 rowKey="col_ID"
                 search={{
@@ -159,10 +141,7 @@ const TableList: React.FC = () => {
                 </FooterToolbar>
             )}
             <ModalForm
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.新建藏品',
-                    defaultMessage: '新建藏品',
-                })}
+                title="新建藏品"
                 width="400px"
                 visible={createModalVisible}
                 onVisibleChange={handleModalVisible}
@@ -223,50 +202,6 @@ const TableList: React.FC = () => {
                     name="col_Photo"
                 />
             </ModalForm>
-            <UpdateForm
-                onSubmit={async (value) => {
-                    const success = await handleUpdate(value);
-
-                    if (success) {
-                        handleUpdateModalVisible(false);
-                        setCurrentRow(undefined);
-
-                        if (actionRef.current) {
-                            actionRef.current.reload();
-                        }
-                    }
-                }}
-                onCancel={() => {
-                    handleUpdateModalVisible(false);
-                    setCurrentRow(undefined);
-                }}
-                updateModalVisible={updateModalVisible}
-                values={currentRow || {}}
-            />
-
-            <Drawer
-                width={600}
-                visible={showDetail}
-                onClose={() => {
-                    setCurrentRow(undefined);
-                    setShowDetail(false);
-                }}
-                closable={false}
-            >
-                {currentRow?.name && (
-                    <ProDescriptions<API.RuleListItem>
-                        column={2}
-                        title={currentRow?.name}
-                        request={async () => ({
-                            data: currentRow || {},
-                        })}
-                        params={{
-                            id: currentRow?.name,
-                        }}
-                        columns={columns as ProDescriptionsItemProps<API.RuleListItem>[]}
-                    />
-                )}
-            </Drawer>
         </PageContainer>
     );
 };

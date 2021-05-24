@@ -1,7 +1,6 @@
 import { PlusOutlined } from '@ant-design/icons';
 import { Button, message } from 'antd';
 import React, { useState, useRef } from 'react';
-import { useIntl } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
@@ -55,15 +54,8 @@ const handleRemove = async (selectedRows: API.NewItem[]) => {
 const TableList: React.FC = () => {
     /** 新建窗口的弹窗 */
     const [createModalVisible, handleModalVisible] = useState<boolean>(false);
-    /** 分布更新窗口的弹窗 */
-
-    const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
     const actionRef = useRef<ActionType>();
-    const [currentRow, setCurrentRow] = useState<API.NewItem>();
     const [selectedRowsState, setSelectedRows] = useState<API.NewItem[]>([]);
-    /** 国际化配置 */
-
-    const intl = useIntl();
     const columns: ProColumns<API.NewItem>[] = [
         {
             title: '标题',
@@ -93,11 +85,8 @@ const TableList: React.FC = () => {
     ];
     return (
         <PageContainer>
-            <ProTable<API.MuseumListItem, API.PageParams>
-                headerTitle={intl.formatMessage({
-                    id: 'pages.searchTable.title',
-                    defaultMessage: '查询表格',
-                })}
+            <ProTable<API.NewItem, API.PageParams>
+                headerTitle="查询表格"
                 actionRef={actionRef}
                 rowKey="news_ID"
                 search={false}
@@ -148,10 +137,7 @@ const TableList: React.FC = () => {
                 </FooterToolbar>
             )}
             <ModalForm
-                title={intl.formatMessage({
-                    id: 'pages.searchTable.createForm.增加新闻',
-                    defaultMessage: '增加新闻',
-                })}
+                title="增加新闻"
                 width="400px"
                 visible={createModalVisible}
                 onVisibleChange={handleModalVisible}

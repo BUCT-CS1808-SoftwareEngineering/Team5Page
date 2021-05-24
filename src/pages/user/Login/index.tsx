@@ -56,10 +56,7 @@ const Login: React.FC = () => {
             // 登录
             const msg = await login({ ...values });
             if (msg.code === "success") {
-                const defaultloginSuccessMessage = intl.formatMessage({
-                    id: 'pages.login.success',
-                    defaultMessage: '登录成功！',
-                });
+                const defaultloginSuccessMessage = "登陆成功"
                 sessionStorage.setItem("currentToken",msg.token);
                 message.success(defaultloginSuccessMessage);
                 await fetchUserInfo();
@@ -69,10 +66,7 @@ const Login: React.FC = () => {
 
             setUserLoginState(msg);
         } catch (error) {
-            const defaultloginFailureMessage = intl.formatMessage({
-                id: 'pages.login.failure',
-                defaultMessage: '登录失败，请重试！',
-            });
+            const defaultloginFailureMessage = '登录失败，请重试！'
             message.error(defaultloginFailureMessage);
         }
 
@@ -104,10 +98,7 @@ const Login: React.FC = () => {
                         }}
                         submitter={{
                             searchConfig: {
-                                submitText: intl.formatMessage({
-                                    id: 'pages.login.submit',
-                                    defaultMessage: '登录',
-                                }),
+                                submitText: '登录'
                             },
                             render: (_, dom) => dom.pop(),
                             submitButtonProps: {
@@ -125,10 +116,7 @@ const Login: React.FC = () => {
 
                         {code === "error" && (
                             <LoginMessage
-                                content={intl.formatMessage({
-                                    id: 'pages.login.accountLogin.errorMessage',
-                                    defaultMessage: '账户或密码错误（admin/ant.design)',
-                                })}
+                                content={'账户或密码错误（admin/ant.design)'}
                             />
                         )}
                                 <ProFormText
@@ -137,10 +125,7 @@ const Login: React.FC = () => {
                                         size: 'large',
                                         prefix: <UserOutlined className={styles.prefixIcon} />,
                                     }}
-                                    placeholder={intl.formatMessage({
-                                        id: 'pages.login.username.placeholder',
-                                        defaultMessage: '用户名: admin or user',
-                                    })}
+                                    placeholder={'用户名:'}
                                     rules={[
                                         {
                                             required: true,
@@ -154,10 +139,7 @@ const Login: React.FC = () => {
                                         size: 'large',
                                         prefix: <LockOutlined className={styles.prefixIcon} />,
                                     }}
-                                    placeholder={intl.formatMessage({
-                                        id: 'pages.login.password.placeholder',
-                                        defaultMessage: '密码: ant.design',
-                                    })}
+                                    placeholder={'密码:'}
                                     rules={[
                                         {
                                             required: true,

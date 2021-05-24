@@ -111,7 +111,7 @@ const TableList: React.FC = () => {
             dataIndex: 'video_Url',
             render:(_,record)=>
                 <>
-                    <a href={`http://192.144.230.213:8081${record.video_Url}`}> 
+                    <a href={`http://192.144.230.213:8081${record.video_Url}`} target={"_blank"}> 
                         链接
                     </a>
                 </>
@@ -153,6 +153,7 @@ const TableList: React.FC = () => {
                     </Button>,
                 ]}
                 request={getVideos}
+                search={false}
                 columns={columns}
                 rowSelection={{
                     onChange: (_, selectedRows) => {

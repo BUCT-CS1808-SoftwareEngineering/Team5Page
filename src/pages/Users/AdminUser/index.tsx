@@ -1,7 +1,6 @@
 import { PlusOutlined } from '@ant-design/icons';
 import { Button, message } from 'antd';
 import React, { useState, useRef } from 'react';
-import { useIntl } from 'umi';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import type { ProColumns, ActionType } from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
@@ -78,8 +77,6 @@ const TableList: React.FC = () => {
     const actionRef = useRef<ActionType>();
     const [currentRow, setCurrentRow] = useState<API.AdminItem>({});
     const [selectedRowsState, setSelectedRows] = useState<API.AdminItem[]>([]);
-
-    const intl = useIntl();
     const columns: ProColumns<API.AdminItem>[] = [
         {
             title: '管理员ID',
@@ -115,10 +112,7 @@ const TableList: React.FC = () => {
     return (
         <PageContainer>
             <ProTable<API.AdminItem, API.PageParams>
-                headerTitle={intl.formatMessage({
-                    id: 'pages.searchTable.title',
-                    defaultMessage: '查询表格',
-                })}
+                headerTitle="查询表格"
                 actionRef={actionRef}
                 rowKey="admin_ID"
                 search={false}

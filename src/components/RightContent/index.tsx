@@ -1,4 +1,4 @@
-import { Tag, Space, Button } from 'antd';
+import { Tag, Space, Button, message } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import React from 'react';
 import { useModel } from 'umi';
@@ -52,7 +52,21 @@ const GlobalHeaderRight: React.FC = () => {
             <span>
                 <Button
                     type="primary"
-                    onClick = {()=>console.log("不会调用接口.202105240209")}
+                    onClick={() => {
+                        const hide = message.loading('正在添加');
+
+                        try {
+                            console.log("不会掉调用这个接口")
+                            // await addAttention({ ...fields });
+                            hide();
+                            message.success('备份成功');
+                            return true;
+                        } catch (error) {
+                            hide();
+                            message.error('备份失败请重试！');
+                            return false;
+                        }
+                    }}
                 >
                     备份
                 </Button>
