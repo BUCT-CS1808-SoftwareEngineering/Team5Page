@@ -3,7 +3,6 @@ import { ProFormText, ModalForm, ProFormUploadDragger } from '@ant-design/pro-fo
 import type { FormInstance } from 'antd';
 import {message} from 'antd';
 import { ActionType } from '@ant-design/pro-table';
-import { postUserAvatar } from '@/services/ant-design-pro/api';
 
 type UpdateFormProps = {
     title: string;
@@ -122,6 +121,15 @@ const UpdateForm: React.FC<UpdateFormProps> = (props) => {
                     label="头像"
                     name="file"
                     fieldProps={{
+                        beforeUpload: (file) =>{
+                            const allowUpdateSet = new Set(["image/jpeg","image/png","image/png"]);
+                            const isFileUpdateOK = allowUpdateSet.has(file.type);
+                            if(!isFileUpdateOK){
+                                message.error("这是图片吗?");
+                                return false;
+                            }
+                            return true;
+                        },
                         customRequest: async (file) => {
 
                             const formData = new FormData();
@@ -130,9 +138,10 @@ const UpdateForm: React.FC<UpdateFormProps> = (props) => {
                             const hide = message.loading('正在添加');
 
                             try {
-                                await postUserAvatar({
-                                    body: formData,
-                                });
+                                // await postUserAvatar({
+                                //     body: formData,
+                                // });
+                                console.log("formData",formData);
                                 hide();
                                 message.success('添加成功');
                                 return true;

@@ -37,7 +37,10 @@ declare namespace API {
         total?: number;
         success?: number;
         code?: string;
-        info?: Object;
+        info?: {
+            num: number;
+            items: any[];
+        };
     };
     type CollectionItem = {
         col_ID : number;

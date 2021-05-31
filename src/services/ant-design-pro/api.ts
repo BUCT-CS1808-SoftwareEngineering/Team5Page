@@ -48,13 +48,23 @@ export async function getMuseum(
     },
     options?: { [key: string]: any },
 ) {
-    return RealRequest<API.MuseumList>(`/api/museum/info`, {
+    let result = await RealRequest<API.MuseumList>(`/api/museum/infoAll`, {
         method: 'GET',
         params: {
             ...params,
         },
         ...(options || {}),
     });
+    let i:number;
+    let new_result:any = Object.assign(result);
+    for(i = 0;i < result.info?.items.length;i++){
+        if(typeof result.info?.items[i].muse_Name != "undefined"){
+            break;
+        }
+    }
+    new_result.total = result.total-i;
+    new_result.data = result.data?.slice(i);
+    return  new_result;
 }
 /**新建博物馆 */
 export async function addMuseum(options?: { [key: string]: any }) {

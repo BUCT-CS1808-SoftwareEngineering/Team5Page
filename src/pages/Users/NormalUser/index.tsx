@@ -8,7 +8,7 @@ import type { ProDescriptionsItemProps } from '@ant-design/pro-descriptions';
 import ProDescriptions from '@ant-design/pro-descriptions';
 import UpdateForm from './components/UpdateForm';
 
-import { getNormalUser, addNormalUser, deleteNormalUser,updateNormalUser } from '@/services/ant-design-pro/api';
+import { getNormalUser, addNormalUser, deleteNormalUser, updateNormalUser, postUserAvatar } from '@/services/ant-design-pro/api';
 import Avatar from 'antd/lib/avatar/avatar';
 /**
  * 添加用户
@@ -36,16 +36,27 @@ const handleAdd = async (fields: API.NormalUserItem) => {
  * @param fields
  */
 
-const handleUpdate = async (fields: API.NormalUserItem) => {
+const handleUpdate = async (fields: API.NormalUserItem|any) => {
     const hide = message.loading('正在配置');
 
     try {
-        await updateNormalUser(fields);
+        // console.log("fields",fields);
+        const formData = new FormData();
+        formData.append('file', fields.file[0]);
+        formData.append("user_ID", fields?.user_ID?.toString() as string);
+        // await postUserAvatar({
+        //     body: formData
+        // })
+        console.log("handleUpdate",formData);
+        const newFields = Object.assign(fields);
+        delete newFields.file;
+        // await updateNormalUser(newFields);
         hide();
         message.success('配置成功');
         return true;
     } catch (error) {
         hide();
+        // console.log("eroor",error);
         message.error('配置失败请重试！');
         return false;
     }
@@ -86,13 +97,13 @@ const TableList: React.FC = () => {
         {
             title: '用户ID',
             dataIndex: 'user_ID',
-            render: (_,record)=>
-            <>
-                <Avatar
-                    src = {`http://192.144.230.213:8081${record.user_Avatar}`}
-                />
-                {record.user_Name}
-            </>
+            render: (_, record) =>
+                <>
+                    <Avatar
+                        src={`http://192.144.230.213:8081${record.user_Avatar}`}
+                    />
+                    {record.user_Name}
+                </>
         },
         {
             title: '用户名',
@@ -189,7 +200,7 @@ const TableList: React.FC = () => {
                     </Button>
                 </FooterToolbar>
             )}
-            <UpdateForm 
+            <UpdateForm
                 title={"新建用户"}
                 updateModalVisible={createModalVisible}
                 currentRow={currentRow}
@@ -199,7 +210,7 @@ const TableList: React.FC = () => {
                 proTableRef={actionRef}
                 type={"add"}
             />
-            <UpdateForm 
+            <UpdateForm
                 title={"修改用户"}
                 updateModalVisible={updateModalVisible}
                 currentRow={currentRow}
